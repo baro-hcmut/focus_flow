@@ -54,7 +54,7 @@ STATE_FOCUS = "FOCUS"
 STATE_BREAK = "BREAK"
 STATE_PAUSED = "PAUSED"
 
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.0.1"
 GITHUB_REPO = "baro-hcmut/focus_flow"
 
 def parse_version_tuple(v_str):
