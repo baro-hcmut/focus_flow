@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.spec
+
+# Build & Release
+build/
+dist/
+*.zip
+*.log
+.app.pid
+
+# Testing & Scratch
+test_extract/
+test_motw/
+scratch/
+test_*.png
+verified_*.png
+
+# Environment
+.env
+.venv
+env/
+venv/

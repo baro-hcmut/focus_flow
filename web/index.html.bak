@@ -1,0 +1,4023 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Focus Flow • Pomodoro 50/10 Pro</title>
+  <link rel="icon" type="image/x-icon" href="app_icon.ico">
+  <link rel="icon" type="image/png" href="app_icon.png">
+  <style>
+    /* ==========================================================================
+       DESIGN SYSTEM: Linear + Raycast + Things 3 Precision Dark Standard
+       ========================================================================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    :root {
+      --bg: #090a0f;
+      --bg-surface: #0e1117;
+      --bg-surface-elevated: #141721;
+      --bg-subtle: rgba(255, 255, 255, 0.03);
+      --bg-hover: rgba(255, 255, 255, 0.06);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-subtle: rgba(255, 255, 255, 0.05);
+      --border-highlight: rgba(255, 255, 255, 0.16);
+
+      --text: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --text-dim: #475569;
+
+      --emerald: #10b981;
+      --emerald-light: #34d399;
+      --emerald-dark: #059669;
+      --emerald-glow: rgba(16, 185, 129, 0.25);
+      --amber: #f59e0b;
+      --amber-dark: #d97706;
+      --amber-glow: rgba(245, 158, 11, 0.25);
+      --cyan: #06b6d4;
+      --cyan-glow: rgba(6, 182, 212, 0.2);
+      --indigo: #6366f1;
+      --rose: #f43f5e;
+      --purple: #a855f7;
+
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Geist", Helvetica, Arial, sans-serif;
+      --mono: "SF Mono", "Geist Mono", "JetBrains Mono", Consolas, monospace;
+    }
+
+    body {
+      background: var(--bg);
+      background-image: 
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(16, 185, 129, 0.06), transparent 70%),
+        radial-gradient(circle at 100% 100%, rgba(6, 182, 212, 0.03), transparent 50%);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 13px;
+      line-height: 1.5;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      position: relative;
+    }
+
+    body.movie-mode-active {
+      background-image: 
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(245, 158, 11, 0.08), transparent 70%),
+        radial-gradient(circle at 100% 100%, rgba(244, 63, 94, 0.04), transparent 50%);
+    }
+
+    /* ==================== MINI HUD FLOATING WIDGET STYLING ==================== */
+    .mini-hud-widget {
+      display: none;
+    }
+
+    body.mini-mode {
+      background: #090a0f !important;
+      border-radius: 14px !important;
+      overflow: hidden !important;
+      border: 1px solid rgba(255, 255, 255, 0.14) !important;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body.mini-mode .titlebar,
+    body.mini-mode .tab-dock,
+    body.mini-mode .main-workspace,
+    body.mini-mode .bottom-bar,
+    body.mini-mode .modal-overlay,
+    body.mini-mode .toast {
+      display: none !important;
+    }
+
+    body.mini-mode .mini-hud-widget {
+      display: flex !important;
+      flex-direction: column;
+      justify-content: space-between;
+      width: 100vw;
+      height: 100vh;
+      padding: 10px 14px 6px 14px;
+      box-sizing: border-box;
+      -webkit-app-region: drag;
+      cursor: grab;
+      background: radial-gradient(circle at top left, rgba(22, 33, 54, 0.95), rgba(9, 10, 15, 0.98)) !important;
+    }
+
+    body.mini-mode .mini-hud-widget:active {
+      cursor: grabbing;
+    }
+
+    .mini-hud-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .mini-hud-left {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 2px;
+      min-width: 120px;
+      cursor: grab;
+    }
+
+    .mini-digits-row {
+      display: flex;
+      align-items: baseline;
+      gap: 3px;
+      line-height: 1;
+    }
+
+    .mini-digits {
+      font-family: var(--mono);
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #ffffff;
+      font-feature-settings: "tnum" 1, "zero" 1;
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+      line-height: 1;
+    }
+
+    .mini-status-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 3px;
+    }
+
+    .mini-status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--emerald);
+      box-shadow: 0 0 8px currentColor;
+      flex-shrink: 0;
+      transition: background 0.3s ease;
+    }
+
+    .mini-status-text {
+      font-size: 11px;
+      font-weight: 600;
+      color: #94a3b8;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 135px;
+      letter-spacing: 0.2px;
+    }
+
+    .mini-hud-right {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      -webkit-app-region: no-drag;
+    }
+
+    .mini-action-btn {
+      -webkit-app-region: no-drag;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #cbd5e1;
+      transition: all 0.15s ease;
+    }
+
+    .mini-action-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    .mini-action-btn.hero-play {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #10b981, #059669);
+      border: none;
+      color: #ffffff;
+      box-shadow: 0 2px 10px rgba(16, 185, 129, 0.35);
+    }
+
+    .mini-action-btn.hero-play:hover {
+      transform: scale(1.06);
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.5);
+    }
+
+    .mini-action-btn.close:hover {
+      background: rgba(239, 68, 68, 0.25);
+      color: #ef4444;
+      border-color: rgba(239, 68, 68, 0.35);
+    }
+
+    .mini-progress-track {
+      width: 100%;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 5px;
+      margin-bottom: 2px;
+    }
+
+    .mini-progress-fill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #10b981, #06b6d4);
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+
+    /* ==================== 2 APPLICATION MODES SWITCHER ==================== */
+    .mode-switcher-bar {
+      display: flex;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 3px;
+      margin: 0 0 10px 0;
+      gap: 3px;
+      flex-shrink: 0;
+    }
+
+    .mode-segment-btn {
+      flex: 1;
+      padding: 6px 10px;
+      text-align: center;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .mode-segment-btn:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .mode-segment-btn.active#btnModeStudy {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.18), rgba(6, 182, 212, 0.12));
+      border-color: rgba(16, 185, 129, 0.3);
+      color: #34d399;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    }
+
+    .mode-segment-btn.active#btnModeEyeCare {
+      background: linear-gradient(135deg, rgba(6, 182, 212, 0.18), rgba(99, 102, 241, 0.12));
+      border-color: rgba(6, 182, 212, 0.3);
+      color: #38bdf8;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    }
+
+    /* Study on YouTube/FB quick pill */
+    .study-ytb-toggle-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 7px;
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .study-ytb-toggle-pill:hover {
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--text);
+    }
+
+    .study-ytb-toggle-pill.active {
+      background: rgba(6, 182, 212, 0.15);
+      border-color: rgba(6, 182, 212, 0.35);
+      color: #38bdf8;
+    }
+
+    /* Eye care advice card */
+    .eyecare-tips-card {
+      background: linear-gradient(135deg, rgba(6, 182, 212, 0.06), rgba(99, 102, 241, 0.03));
+      border: 1px solid rgba(6, 182, 212, 0.2);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin: 10px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .eyecare-tips-title {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .eyecare-tips-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    .eyecare-tip-item {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+      padding: 6px 8px;
+      text-align: center;
+    }
+
+    .eyecare-tip-icon {
+      font-size: 16px;
+      margin-bottom: 2px;
+    }
+
+    .eyecare-tip-text {
+      font-size: 10px;
+      color: #cbd5e1;
+      font-weight: 500;
+    }
+
+    /* Analytics Tab Dashboard */
+    .analytics-dashboard {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 4px 0 16px 0;
+    }
+
+    .weekly-history-card {
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+    }
+
+    .weekly-bars-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      height: 60px;
+      padding: 0 4px;
+      gap: 6px;
+    }
+
+    .weekly-bar-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      height: 100%;
+      justify-content: flex-end;
+      gap: 4px;
+    }
+
+    .weekly-bar-pill {
+      width: 100%;
+      max-width: 26px;
+      background: linear-gradient(180deg, #06b6d4, #0284c7);
+      border-radius: 4px;
+      min-height: 4px;
+      transition: height 0.3s ease;
+      cursor: pointer;
+    }
+
+    .weekly-bar-pill.today {
+      background: linear-gradient(180deg, #10b981, #059669);
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+    }
+
+    .weekly-bar-day {
+      font-size: 9px;
+      color: var(--text-dim);
+    }
+
+    .weekly-bar-day.today {
+      color: #34d399;
+      font-weight: 700;
+    }
+
+    .stats-tri-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .stat-metric-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 9px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .stat-metric-card.deep {
+      border-left: 3px solid var(--emerald);
+    }
+
+    .stat-metric-card.online {
+      border-left: 3px solid var(--cyan);
+    }
+
+    .stat-metric-card.distracted {
+      border-left: 3px solid var(--rose);
+    }
+
+    .stat-metric-title {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.3px;
+    }
+
+    .stat-metric-num {
+      font-family: var(--mono);
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .multi-progress-bar {
+      display: flex;
+      height: 6px;
+      width: 100%;
+      border-radius: 3px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.06);
+      margin: 4px 0;
+    }
+
+    .prog-seg-deep {
+      background: var(--emerald);
+      transition: width 0.3s ease;
+    }
+
+    .prog-seg-online {
+      background: var(--cyan);
+      transition: width 0.3s ease;
+    }
+
+    .prog-seg-distracted {
+      background: var(--rose);
+      transition: width 0.3s ease;
+    }
+
+    .tag-btn-reclassify {
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 5px;
+      border: 1px solid;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .tag-btn-reclassify.study {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.3);
+      color: var(--emerald-light);
+    }
+
+    .tag-btn-reclassify.distraction {
+      background: rgba(244, 63, 94, 0.12);
+      border-color: rgba(244, 63, 94, 0.3);
+      color: #fb7185;
+    }
+
+    .tag-btn-reclassify.online_study {
+      background: rgba(6, 182, 212, 0.12);
+      border-color: rgba(6, 182, 212, 0.3);
+      color: #38bdf8;
+    }
+
+    /* 1. TITLEBAR */
+    .titlebar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px 8px 14px;
+      background: rgba(9, 10, 15, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-app-region: drag;
+      cursor: grab;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      z-index: 100;
+    }
+
+    .titlebar-left {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .brand-svg {
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      filter: drop-shadow(0 0 6px var(--emerald-glow));
+      flex-shrink: 0;
+    }
+
+    .brand-title {
+      font-weight: 600;
+      font-size: 12.5px;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .brand-tag {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--cyan);
+      background: rgba(6, 182, 212, 0.1);
+      padding: 1.5px 5.5px;
+      border-radius: 4px;
+      border: 1px solid rgba(6, 182, 212, 0.22);
+      letter-spacing: 0.02em;
+    }
+
+    .status-dot {
+      width: 6.5px;
+      height: 6.5px;
+      border-radius: 50%;
+      background: var(--emerald);
+      box-shadow: 0 0 8px var(--emerald);
+      animation: pulse 2.8s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .titlebar-center {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      -webkit-app-region: no-drag;
+    }
+
+    .cycle-pill-quick {
+      font-size: 10.5px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      padding: 2.5px 9px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .cycle-pill-quick:hover {
+      color: var(--text);
+      background: var(--bg-hover);
+      border-color: var(--border-highlight);
+    }
+
+    .titlebar-right {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      -webkit-app-region: no-drag;
+    }
+
+    .tb-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      width: 28px;
+      height: 25px;
+      border-radius: 5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+
+    .tb-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text);
+    }
+
+    .tb-btn.close:hover {
+      background: #e11d48;
+      color: #fff;
+    }
+
+    /* 2. DOCK TABS */
+    .tab-dock {
+      display: flex;
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 3px;
+      margin: 8px 16px 4px 16px;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+
+    .tab-pill {
+      flex: 1;
+      padding: 5px 6px;
+      text-align: center;
+      font-size: 11.5px;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      white-space: nowrap;
+      transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .tab-pill:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .tab-pill.active {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.14);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+      font-weight: 600;
+    }
+
+    .tab-pill svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    .tab-badge {
+      background: #f59e0b;
+      color: #000;
+      font-size: 9px;
+      font-weight: 800;
+      padding: 0 5px;
+      border-radius: 999px;
+      line-height: 14px;
+      height: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 3. MAIN WORKSPACE CANVAS */
+    .main-workspace {
+      flex: 1;
+      padding: 6px 16px 8px 16px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .main-workspace::-webkit-scrollbar {
+      width: 4px;
+    }
+    .main-workspace::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+    }
+
+    .tab-view {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1;
+    }
+
+    .tab-view.active {
+      display: flex;
+    }
+
+    /* 4. ACTIVE TARGET HERO CARD */
+    .active-target-card {
+      width: 100%;
+      background: linear-gradient(180deg, rgba(6, 182, 212, 0.05) 0%, rgba(6, 182, 212, 0.02) 100%);
+      border: 1px solid rgba(6, 182, 212, 0.2);
+      border-radius: 9px;
+      padding: 6.5px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      transition: all 0.15s ease;
+    }
+
+    .active-target-card:hover {
+      border-color: rgba(6, 182, 212, 0.35);
+      background: linear-gradient(180deg, rgba(6, 182, 212, 0.08) 0%, rgba(6, 182, 212, 0.03) 100%);
+    }
+
+    .target-content-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow: hidden;
+      flex: 1;
+    }
+
+    .target-micro-tag {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      background: rgba(6, 182, 212, 0.14);
+      padding: 1.5px 6px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      border: 1px solid rgba(6, 182, 212, 0.25);
+    }
+
+    .target-active-text {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .target-edit-hint {
+      font-size: 10px;
+      color: var(--text-dim);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+    }
+
+    /* 5. DURATION PICKER ROW (Flexible & Movie Timer) */
+    .duration-quick-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      padding: 2px 0;
+    }
+
+    .duration-pills-group {
+      display: flex;
+      gap: 3px;
+      align-items: center;
+    }
+
+    .duration-pill {
+      font-size: 10.5px;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      padding: 2px 7.5px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .duration-pill:hover {
+      color: var(--text);
+      background: var(--bg-hover);
+      border-color: var(--border-highlight);
+    }
+
+    .duration-pill.active {
+      color: #fff;
+      background: rgba(16, 185, 129, 0.15);
+      border-color: var(--emerald);
+      font-weight: 600;
+    }
+
+    .duration-pill.custom-btn {
+      color: var(--cyan);
+      border-color: rgba(6, 182, 212, 0.25);
+      background: rgba(6, 182, 212, 0.05);
+    }
+
+    .duration-pill.movie-btn {
+      color: #fbbf24;
+      border-color: rgba(245, 158, 11, 0.25);
+      background: rgba(245, 158, 11, 0.06);
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    /* 6. SWISS CHRONOMETER DIAL */
+    .dial-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2px 0;
+      position: relative;
+    }
+
+    .dial-wrapper {
+      position: relative;
+      width: 168px;
+      height: 168px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dial-svg {
+      transform: rotate(-90deg);
+      width: 168px;
+      height: 168px;
+    }
+
+    .dial-tick-subtle {
+      stroke: rgba(255, 255, 255, 0.08);
+      stroke-width: 1;
+      stroke-linecap: round;
+    }
+
+    .dial-tick-major {
+      stroke: rgba(255, 255, 255, 0.22);
+      stroke-width: 1.6;
+      stroke-linecap: round;
+    }
+
+    .dial-track {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.04);
+      stroke-width: 3;
+    }
+
+    .dial-progress {
+      fill: none;
+      stroke: url(#dialGradient);
+      stroke-width: 3.5;
+      stroke-linecap: round;
+      stroke-dasharray: 480;
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+      filter: drop-shadow(0 0 8px var(--emerald-glow));
+    }
+
+    .dial-content {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      pointer-events: none;
+      width: 100%;
+      padding: 0 10px;
+    }
+
+    .dial-digits {
+      font-family: var(--mono);
+      font-size: 40px;
+      font-weight: 500;
+      font-variant-numeric: tabular-nums;
+      color: #ffffff;
+      letter-spacing: -0.05em;
+      line-height: 1;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .dial-state-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 999px;
+      margin-top: 5px;
+      background: rgba(16, 185, 129, 0.09);
+      color: var(--emerald-light);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    .dial-sub-instruction {
+      font-size: 9.5px;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    /* 7. HERO ACTION BUTTONS */
+    .hero-actions-bar {
+      display: flex;
+      gap: 7px;
+      width: 100%;
+      margin-top: 2px;
+    }
+
+    .btn-hero-primary {
+      flex: 3;
+      height: 38px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #fff;
+      background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      box-shadow: 0 2px 10px var(--emerald-glow), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      white-space: nowrap;
+      transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .btn-hero-primary:hover {
+      filter: brightness(1.08);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px var(--emerald-glow), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    }
+
+    .btn-hero-primary:active {
+      transform: translateY(0);
+      filter: brightness(0.96);
+    }
+
+    .btn-hero-primary.paused {
+      background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+      box-shadow: 0 2px 10px var(--amber-glow), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+    }
+
+    .btn-hero-primary.movie-theme {
+      background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+      box-shadow: 0 2px 10px var(--amber-glow), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+    }
+
+    .btn-hero-ghost {
+      flex: 1;
+      height: 38px;
+      border-radius: 8px;
+      font-size: 11.5px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+
+    .btn-hero-ghost:hover:not(:disabled) {
+      background: var(--bg-hover);
+      color: var(--text);
+      border-color: var(--border-highlight);
+    }
+
+    .btn-hero-ghost:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    kbd {
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      padding: 1px 4.5px;
+      font-size: 9.5px;
+      font-family: var(--mono);
+      color: var(--text-secondary);
+    }
+
+    /* 8. THINGS 3 MICRO-CHECKLIST (Clean, Empty by Default) */
+    .checklist-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      padding-top: 6px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .checklist-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2px;
+    }
+
+    .checklist-title-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .checklist-actions-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .checklist-counter {
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .btn-clear-tasks {
+      font-size: 10.5px;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      transition: color 0.15s;
+    }
+
+    .btn-clear-tasks:hover {
+      color: var(--rose);
+    }
+
+    .checklist-progress-bar {
+      width: 100%;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 2px;
+    }
+
+    .checklist-progress-fill {
+      height: 100%;
+      background: var(--emerald);
+      width: 0%;
+      transition: width 0.35s ease;
+    }
+
+    .tasks-list-scroll {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .tasks-list-scroll::-webkit-scrollbar {
+      width: 3px;
+    }
+    .tasks-list-scroll::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 999px;
+    }
+
+    .empty-tasks-placeholder {
+      padding: 12px 8px;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 11px;
+    }
+
+    .task-item-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 8px;
+      border-radius: 6px;
+      background: transparent;
+      transition: background 0.15s;
+    }
+
+    .task-item-row:hover {
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .task-item-row.is-active-target {
+      background: rgba(6, 182, 212, 0.04);
+      border-left: 2.5px solid var(--cyan);
+    }
+
+    .round-check-circle {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255, 255, 255, 0.24);
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .round-check-circle:hover {
+      border-color: var(--emerald);
+    }
+
+    .round-check-circle.checked {
+      background: var(--emerald);
+      border-color: var(--emerald);
+    }
+
+    .round-check-circle svg {
+      width: 9.5px;
+      height: 9.5px;
+      color: #fff;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .round-check-circle.checked svg {
+      opacity: 1;
+    }
+
+    .btn-pin-task {
+      color: var(--text-dim);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 2px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      transition: all 0.15s;
+      flex-shrink: 0;
+      opacity: 0;
+    }
+
+    .task-active-badge {
+      font-size: 9.5px;
+      font-weight: 600;
+      color: #38bdf8;
+      background: rgba(6, 182, 212, 0.12);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      padding: 1px 6px;
+      border-radius: 4px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      letter-spacing: 0.02em;
+    }
+
+    .task-input-field {
+      flex: 1;
+      font-size: 12px;
+      color: var(--text);
+      background: transparent;
+      border: none;
+      outline: none;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    .task-item-row.done .task-input-field {
+      color: var(--text-dim);
+      text-decoration: line-through;
+    }
+
+    .btn-delete-task {
+      color: var(--text-dim);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 2px;
+      border-radius: 4px;
+      opacity: 0;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .task-item-row:hover .btn-delete-task {
+      opacity: 0.6;
+    }
+
+    .btn-delete-task:hover {
+      color: var(--rose) !important;
+      opacity: 1 !important;
+    }
+
+    .add-task-ghost-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 8px;
+      border-radius: 6px;
+      color: var(--text-dim);
+      transition: all 0.15s;
+    }
+
+    .add-task-ghost-row:focus-within {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.025);
+    }
+
+    .add-task-ghost-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-size: 12px;
+    }
+
+    .add-task-ghost-input::placeholder {
+      color: var(--text-dim);
+    }
+
+    /* 9. QUICK CAPTURE BAR */
+    .quick-capture-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(245, 158, 11, 0.035);
+      border: 1px solid rgba(245, 158, 11, 0.16);
+      border-radius: 8px;
+      padding: 6px 10px;
+      margin-top: auto;
+      transition: all 0.15s;
+    }
+
+    .quick-capture-bar:focus-within {
+      border-color: rgba(245, 158, 11, 0.4);
+      background: rgba(245, 158, 11, 0.06);
+    }
+
+    .quick-capture-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-size: 11.5px;
+    }
+
+    .quick-capture-input::placeholder {
+      color: rgba(245, 158, 11, 0.65);
+    }
+
+    .btn-quick-capture-submit {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      color: #fbbf24;
+      padding: 3px 8px;
+      border-radius: 5px;
+      font-size: 10.5px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+
+    .btn-quick-capture-submit:hover {
+      background: rgba(245, 158, 11, 0.22);
+    }
+
+    /* 10. BOTTOM STATUS BAR */
+    .bottom-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 16px;
+      background: rgba(9, 10, 15, 0.96);
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .footer-action-link {
+      background: transparent;
+      border: none;
+      color: #fbbf24;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .footer-action-link:hover {
+      text-decoration: underline;
+    }
+
+    /* 11. TAB 2: SỔ XAO NHÃNG */
+    .section-head-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-head-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .section-head-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .parking-scroll-area {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .parking-row-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 6px;
+      background: var(--bg-subtle);
+      border: 1px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .parking-row-item:hover {
+      background: var(--bg-hover);
+      border-color: var(--border-subtle);
+    }
+
+    .parking-row-item.resolved {
+      opacity: 0.5;
+    }
+
+    .parking-row-item.resolved .parking-text {
+      text-decoration: line-through;
+    }
+
+    .tag-badge {
+      font-size: 9.5px;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .tag-manual {
+      background: rgba(245, 158, 11, 0.12);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.25);
+    }
+
+    .tag-blocked {
+      background: rgba(244, 63, 94, 0.12);
+      color: #fb7185;
+      border: 1px solid rgba(244, 63, 94, 0.25);
+    }
+
+    .parking-timestamp {
+      font-size: 10px;
+      font-family: var(--mono);
+      color: var(--text-dim);
+      flex-shrink: 0;
+    }
+
+    .parking-text {
+      flex: 1;
+      font-size: 12px;
+      color: var(--text);
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    .btn-trash-parking {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      padding: 3px;
+      border-radius: 4px;
+      opacity: 0;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+    }
+
+    .parking-row-item:hover .btn-trash-parking {
+      opacity: 0.6;
+    }
+
+    .btn-trash-parking:hover {
+      color: var(--rose) !important;
+      opacity: 1 !important;
+    }
+
+    /* 12. TAB 3: SỔ BẮT BẪY */
+    .trap-cards-scroll {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .trap-card-item {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: border-color 0.15s;
+    }
+
+    .trap-card-item:hover {
+      border-color: var(--border-highlight);
+    }
+
+    .trap-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .trap-card-body {
+      font-size: 12px;
+      color: var(--text);
+      line-height: 1.5;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    /* 13. TAB 4: CÀI ĐẶT */
+    .settings-list-scroll {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .settings-group {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .settings-group-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .settings-item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .settings-label-title {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .settings-label-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+
+    .pill-selector {
+      display: flex;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 2px;
+      gap: 2px;
+    }
+
+    .pill-btn {
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .pill-btn:hover {
+      color: var(--text);
+    }
+
+    .pill-btn.active {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.1);
+      font-weight: 600;
+    }
+
+    .switch-toggle {
+      width: 36px;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      flex-shrink: 0;
+    }
+
+    .switch-toggle.on {
+      background: var(--emerald);
+    }
+
+    .switch-knob {
+      width: 16px;
+      height: 16px;
+      background: #ffffff;
+      border-radius: 50%;
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+
+    .switch-toggle.on .switch-knob {
+      transform: translateX(16px);
+    }
+
+    /* 14. TOAST (Non-intrusive bottom-right floating pill) */
+    .toast-container {
+      position: fixed;
+      bottom: 44px;
+      right: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: flex-end;
+      z-index: 1000;
+      pointer-events: none;
+    }
+
+    .toast-pill {
+      background: #1e2230;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: #fff;
+      font-size: 11.5px;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: 999px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      animation: toastIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 15. MODAL OVERLAYS (Purity Report & Custom Timer) */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 7, 10, 0.94);
+      backdrop-filter: blur(20px);
+      z-index: 1100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-backdrop.active {
+      display: flex;
+    }
+
+    .modal-card {
+      background: #0f121a;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .modal-card::-webkit-scrollbar {
+      width: 3px;
+    }
+    .modal-card::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+    }
+
+    .modal-header-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-title-text {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .modal-sub-text {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .btn-close-modal {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 14px;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      transition: all 0.15s;
+    }
+
+    .btn-close-modal:hover {
+      color: #fff;
+      background: var(--bg-hover);
+    }
+
+    /* Purity Report Specific */
+    .purity-hero-banner {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: linear-gradient(180deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.02) 100%);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      border-radius: 10px;
+      padding: 12px 16px;
+    }
+
+    .purity-radial-dial {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 3px solid var(--emerald);
+      box-shadow: 0 0 16px var(--emerald-glow);
+      flex-shrink: 0;
+    }
+
+    .purity-score-digit {
+      font-family: var(--mono);
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1;
+    }
+
+    .purity-score-sub {
+      font-size: 8px;
+      color: var(--emerald-light);
+      margin-top: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .purity-summary-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .purity-status-headline {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--emerald-light);
+      letter-spacing: 0.02em;
+    }
+
+    .purity-metrics-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .metric-box {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 6px;
+      padding: 6px 10px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .metric-label {
+      font-size: 9.5px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .metric-val {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    .metric-val.pure {
+      color: var(--emerald-light);
+    }
+
+    .metric-val.distracted {
+      color: var(--rose);
+    }
+
+    .report-section-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .app-breakdown-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .app-breakdown-row {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 7px 10px;
+    }
+
+    .app-info-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11.5px;
+    }
+
+    .app-name {
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .app-duration-tag {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--rose);
+      font-weight: 600;
+    }
+
+    .app-bar-track {
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .app-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #f59e0b, #f43f5e);
+      border-radius: 999px;
+    }
+
+    .timeline-list {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    .timeline-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--text-secondary);
+      padding: 3px 0;
+    }
+
+    .timeline-time {
+      font-family: var(--mono);
+      color: var(--text-dim);
+      font-size: 10px;
+    }
+
+    /* Custom Timer Modal Specific */
+    .custom-input-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+    }
+
+    .custom-minutes-input {
+      width: 80px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border-highlight);
+      border-radius: 6px;
+      color: #fff;
+      font-size: 18px;
+      font-weight: 700;
+      font-family: var(--mono);
+      padding: 4px 8px;
+      text-align: center;
+      outline: none;
+    }
+
+    .movie-presets-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .movie-card-btn {
+      background: rgba(245, 158, 11, 0.05);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+      border-radius: 8px;
+      padding: 10px 8px;
+      text-align: center;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      transition: all 0.15s;
+    }
+
+    .movie-card-btn:hover {
+      background: rgba(245, 158, 11, 0.12);
+      border-color: rgba(245, 158, 11, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .movie-card-btn .m-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fbbf24;
+    }
+
+    .movie-card-btn .m-desc {
+      font-size: 9.5px;
+      color: var(--text-muted);
+    }
+
+    /* Rest Mode Modal */
+    .rest-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 7, 10, 0.96);
+      backdrop-filter: blur(25px);
+      z-index: 900;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .rest-modal-overlay.active {
+      display: flex;
+    }
+
+    .breathing-pulse-ring {
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      border: 2px solid var(--amber);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      animation: breathe 8s infinite ease-in-out;
+      box-shadow: 0 0 30px var(--amber-glow);
+    }
+
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); opacity: 0.6; }
+      50% { transform: scale(1.15); opacity: 1; }
+    }
+
+    .rest-countdown-clock {
+      font-family: var(--mono);
+      font-size: 36px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    /* Reflection Modal */
+    .reflection-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 7, 10, 0.95);
+      backdrop-filter: blur(20px);
+      z-index: 950;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .reflection-modal.active {
+      display: flex;
+    }
+
+    .reflection-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+    }
+
+    /* Friction Modal */
+    .friction-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.97);
+      backdrop-filter: blur(25px);
+      z-index: 990;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .friction-modal.active {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SVG DEFS FOR GRADIENTS -->
+  <svg style="position: absolute; width: 0; height: 0; overflow: hidden;" aria-hidden="true">
+    <defs>
+      <linearGradient id="dialGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#10b981" />
+        <stop offset="50%" stop-color="#06b6d4" />
+        <stop offset="100%" stop-color="#6366f1" />
+      </linearGradient>
+      <linearGradient id="movieGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#f59e0b" />
+        <stop offset="100%" stop-color="#f43f5e" />
+      </linearGradient>
+      <linearGradient id="breakGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#f59e0b" />
+        <stop offset="100%" stop-color="#d97706" />
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <!-- ==================== MINI HUD FLOATING WIDGET ==================== -->
+  <div class="mini-hud-widget" id="miniHudWidget" ondblclick="pyCall('toggle_mini_mode')" title="Nhấp đúp hoặc bấm ◱ để phóng to giao diện">
+    <div class="mini-hud-content">
+      <div class="mini-hud-left">
+        <div class="mini-digits-row">
+          <span class="mini-digits" id="miniTimerDigits">50:00</span>
+        </div>
+        <div class="mini-status-row">
+          <span class="mini-status-dot" id="miniStatusDot"></span>
+          <span class="mini-status-text" id="miniStatusText">Sẵn sàng học</span>
+        </div>
+      </div>
+
+      <div class="mini-hud-right">
+        <button class="mini-action-btn hero-play" id="miniPlayPauseBtn" onclick="handleMainActionClick()" title="Bắt đầu / Tạm dừng (Space)">
+          <svg width="13" height="13" viewBox="0 0 24 24" id="miniPlayPauseIcon" fill="currentColor">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+        </button>
+        <button class="mini-action-btn" onclick="pyCall('skip_phase')" title="Bỏ qua pha này">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+        </button>
+        <button class="mini-action-btn" onclick="pyCall('toggle_mini_mode')" title="Phóng to cửa sổ đầy đủ (F8)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+        </button>
+        <button class="mini-action-btn close" onclick="pyCall('close_app')" title="Đóng">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="mini-progress-track">
+      <div class="mini-progress-fill" id="miniProgressFill"></div>
+    </div>
+  </div>
+
+  <!-- 1. TITLEBAR -->
+  <div class="titlebar" id="appTitlebar" ondblclick="handleTitlebarDblClick(event)">
+    <div class="titlebar-left">
+      <img src="app_icon.png" class="brand-svg" alt="Focus Flow">
+      <span class="brand-title">Focus Flow <span class="brand-tag">PRO</span></span>
+      <div class="status-dot" id="headerStatusDot"></div>
+    </div>
+
+    <div class="titlebar-center">
+      <div class="cycle-pill-quick" onclick="openCustomTimerModal()" title="Bấm để tùy chỉnh thời gian hoặc hẹn giờ xem phim">
+        <span id="headerCycleInfo">50' · Ca 1/3</span>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+
+    <div class="titlebar-right">
+      <button class="tb-btn" onclick="switchTab('analytics')" title="Báo cáo năng suất & thời gian ứng dụng (📊)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+      </button>
+      <button class="tb-btn" onclick="openCustomTimerModal('movie')" title="Hẹn giờ xem phim (🎬)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
+      </button>
+      <button class="tb-btn" onclick="pyCall('toggle_mini_mode')" title="Thu nhỏ thành Widget mini nổi (F8)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><rect x="12" y="9" width="8" height="6" rx="1" fill="currentColor"/></svg>
+      </button>
+      <button class="tb-btn" onclick="pyCall('minimize_app')" title="Thu nhỏ">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+      <button class="tb-btn close" onclick="pyCall('close_app')" title="Đóng">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- 1. STREAMLINED DOCK NAVIGATION TABS -->
+  <div class="tab-dock">
+    <button class="tab-pill active" onclick="switchTab('study')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span id="tab1TitleText">Bàn Học</span>
+    </button>
+    <button class="tab-pill" onclick="switchTab('parking')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      <span>Sổ Ý Tưởng</span>
+      <span class="tab-badge" id="parkingTabBadge" style="display:none;">0</span>
+    </button>
+    <button class="tab-pill" onclick="switchTab('analytics')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+      <span>Thống Kê Web/App</span>
+    </button>
+    <button class="tab-pill" onclick="switchTab('settings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>Cài Đặt</span>
+    </button>
+  </div>
+
+  <!-- 2. MAIN WORKSPACE CONTAINER -->
+  <div class="main-workspace">
+
+    <!-- ==================== TAB 1: BÀN HỌC (STUDY DESK) ==================== -->
+    <div class="tab-view active" id="tab-study">
+
+      <!-- OPERATING MODE SWITCHER PILL (STUDY VS EYE CARE) -->
+      <div class="mode-switcher-bar">
+        <button class="mode-segment-btn active" id="btnModeStudy" onclick="switchAppMode('study')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          <span>🎓 Tập Trung Học Tập</span>
+        </button>
+        <button class="mode-segment-btn" id="btnModeEyeCare" onclick="switchAppMode('eyecare')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span>👁️ Nghỉ Mắt 50/10</span>
+        </button>
+      </div>
+
+      <!-- ACTIVE TARGET CARD (Dedicated Goal Banner) -->
+      <div class="active-target-card" id="heroActiveTargetCard" onclick="focusChecklistInput()" title="Bấm để chọn hoặc nhập mục tiêu ca học">
+        <div class="target-content-left">
+          <span class="target-micro-tag" id="heroTargetTag">🎯 Mục Tiêu Ca</span>
+          <span class="target-active-text" id="heroActiveTargetLabel">Chưa chọn mục tiêu nào</span>
+        </div>
+        <div class="target-card-hint" style="display:flex; align-items:center; gap:4px; font-size:10.5px; color:var(--text-dim); flex-shrink:0;">
+          <span>Đổi mục tiêu</span>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        </div>
+      </div>
+
+      <!-- SESSION CONTROLS ROW (Duration Pills + Whitelist Toggle) -->
+      <div class="duration-quick-row">
+        <div class="duration-pills-group" id="studyDurationGroup">
+          <button class="duration-pill" id="durPill25" onclick="quickSetTimer(25)">25'</button>
+          <button class="duration-pill" id="durPill45" onclick="quickSetTimer(45)">45'</button>
+          <button class="duration-pill active" id="durPill50" onclick="quickSetTimer(50)">50'</button>
+          <button class="duration-pill" id="durPill90" onclick="quickSetTimer(90)">90'</button>
+          <button class="duration-pill" id="durPill120" onclick="quickSetTimer(120)">120'</button>
+          <button class="duration-pill custom-btn" onclick="openCustomTimerModal()">⏱ Tự chỉnh...</button>
+        </div>
+        <button class="study-ytb-toggle-pill" id="btnToggleYtbStudy" onclick="toggleYoutubeFbStudy()" title="Bật nếu bạn học bài trên YouTube / Facebook để tránh bị màn chắn chặn web">
+          <span>📺 YouTube/FB học bài</span>
+        </button>
+      </div>
+
+      <!-- SWISS CHRONOMETER DIAL -->
+      <div class="dial-stage">
+        <div class="dial-wrapper">
+          <svg class="dial-svg" viewBox="0 0 168 168">
+            <g id="dialTicksGroup"></g>
+            <circle class="dial-track" cx="84" cy="84" r="76"></circle>
+            <circle class="dial-progress" id="dialProgressArc" cx="84" cy="84" r="76"></circle>
+          </svg>
+
+          <div class="dial-content">
+            <div class="dial-digits" id="clockDigits">50:00</div>
+            <div class="dial-state-pill" id="dialPhaseBadge">
+              <span class="status-dot" id="dialPhaseDot"></span>
+              <span id="dialPhaseLabel">Sẵn sàng học</span>
+            </div>
+            <div class="dial-sub-instruction" id="dialSubInstruction">Phím Space để bắt đầu</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HERO ACTION BUTTONS (Clean, Adaptive 3-Button Row) -->
+      <div class="hero-actions-bar">
+        <button class="btn-hero-primary" id="btnMainAction" onclick="handleMainActionClick()" style="flex:2.2;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <span id="btnMainActionText">Bắt đầu ca học</span>
+          <kbd>Space</kbd>
+        </button>
+        <button class="btn-hero-ghost" id="btnResetAction" onclick="pyCall('reset_timer')" title="Đặt lại ca học" style="flex:1;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          <span>Đặt lại</span>
+        </button>
+        <button class="btn-hero-ghost" id="btnSkipAction" onclick="pyCall('skip_session')" title="Bỏ qua sang nghỉ ngơi / Ca tiếp theo" style="flex:1;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+          <span>Bỏ qua</span>
+        </button>
+      </div>
+
+      <!-- THINGS 3 MICRO-CHECKLIST (Generous Vertical Height) -->
+      <div class="checklist-wrapper" id="studyChecklistWrapper">
+        <div class="checklist-header-row">
+          <div class="checklist-title-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+            <span>Mục Tiêu Bước Nhỏ</span>
+          </div>
+          <div class="checklist-actions-right">
+            <span class="checklist-counter" id="checklistProgressText">0/0 hoàn thành</span>
+            <button class="btn-clear-tasks" id="btnClearTasksList" onclick="clearAllTasks()" title="Xóa tất cả mục tiêu" style="display:none;">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+              <span>Xóa hết</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Hairline Progress -->
+        <div class="checklist-progress-bar">
+          <div class="checklist-progress-fill" id="checklistProgressFill"></div>
+        </div>
+
+        <!-- Dynamic Tasks Container -->
+        <div class="tasks-list-scroll" id="tasksListContainer"></div>
+
+        <!-- Seamless Add Task Input -->
+        <div class="add-task-ghost-row">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <input type="text" class="add-task-ghost-input" id="newTaskInput" placeholder="Thêm mục tiêu ca này... (nhấn Enter)" onkeydown="handleNewTaskKeydown(event)">
+        </div>
+      </div>
+
+      <!-- EYE CARE HEALTH ADVICE (Shown when in Eye Care Mode) -->
+      <div class="eyecare-tips-card" id="eyeCareGuideWrapper" style="display:none;">
+        <div class="eyecare-tips-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span>CHẾ ĐỘ NGHỈ MẮT 50/10 • BẢO VỆ THỊ GIÁC & CỘT SỐNG</span>
+        </div>
+        <div style="font-size:11.5px; color:#cbd5e1; line-height:1.5;">
+          Cứ mỗi 50 phút sử dụng máy tính làm việc hoặc giải trí, ứng dụng sẽ nhắc nhở bạn dành 10 phút để mắt và cơ thể được thả lỏng. Không chặn ứng dụng, không ép mục tiêu.
+        </div>
+        <div class="eyecare-tips-grid">
+          <div class="eyecare-tip-item">
+            <div class="eyecare-tip-icon">👀</div>
+            <div class="eyecare-tip-text">Quy tắc 20-20-20: Nhìn xa 6 mét trong 20s</div>
+          </div>
+          <div class="eyecare-tip-item">
+            <div class="eyecare-tip-icon">💧</div>
+            <div class="eyecare-tip-text">Uống nước & chớp mắt nhẹ nhàng</div>
+          </div>
+          <div class="eyecare-tip-item">
+            <div class="eyecare-tip-icon">🚶</div>
+            <div class="eyecare-tip-text">Đứng dậy vươn vai, giãn cơ cổ lưng</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ==================== TAB 2: SỔ Ý TƯỞNG BẤT CHỢT (BRAIN DUMP) ==================== -->
+    <div class="tab-view" id="tab-parking">
+      <div class="section-head-bar">
+        <div>
+          <div class="section-head-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            <span>Sổ Ý Tưởng Bất Chợt (Brain Dump)</span>
+          </div>
+          <div class="section-head-subtitle">Cất nhanh ý tưởng hoặc việc muốn làm sau để không làm đứt dòng suy nghĩ</div>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <button class="btn-hero-ghost" style="height:28px; padding:0 8px; font-size:10.5px;" onclick="pyCall('clear_resolved_parking')">Dọn việc xong</button>
+          <button class="btn-hero-ghost" style="height:28px; padding:0 8px; font-size:10.5px; color:var(--rose);" onclick="pyCall('clear_parking_lot')">Xóa hết</button>
+        </div>
+      </div>
+
+      <div class="quick-capture-bar" style="margin-top:2px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <input type="text" class="quick-capture-input" id="tab2CaptureInput" placeholder="Ghi nhanh ý tưởng hoặc việc muốn làm sau ca học... (Enter)" onkeydown="if(event.key==='Enter') submitTab2Capture()">
+        <button class="btn-quick-capture-submit" onclick="submitTab2Capture()">Cất việc</button>
+      </div>
+
+      <div class="parking-scroll-area" id="parkingListContainer"></div>
+    </div>
+
+    <!-- ==================== TAB 3: THỐNG KÊ & CHI TIẾT WEB/APP (ANALYTICS) ==================== -->
+    <div class="tab-view" id="tab-analytics">
+      <div class="section-head-bar">
+        <div>
+          <div class="section-head-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+            <span>Thống Kê Năng Suất & Web/App</span>
+          </div>
+          <div class="section-head-subtitle">Bảng đối chiếu minh bạch: Học tập sâu vs Học trực tuyến vs Giải trí</div>
+        </div>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <button class="study-ytb-toggle-pill" id="tab3ToggleYtbStudy" onclick="toggleYoutubeFbStudy()">
+            <span>🎓 YouTube/FB học bài</span>
+          </button>
+          <button class="btn-hero-ghost" style="height:28px; padding:0 10px; font-size:11px;" onclick="copyPuritySummary()" title="Sao chép tóm tắt thống kê">
+            <span>📋 Sao chép</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="analytics-dashboard">
+        <!-- 7-Day History Visual Card -->
+        <div class="weekly-history-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span style="font-size:11.5px; font-weight:700; color:#e2e8f0;">HIỆU SUẤT 7 NGÀY GẦN NHẤT</span>
+            </div>
+            <span style="font-size:11px; color:#38bdf8; font-weight:700;" id="weeklyTotalMinutesLabel">0 giờ 0 phút</span>
+          </div>
+          <div class="weekly-bars-container" id="weeklyBarsContainer">
+            <!-- 7 bars rendered by JS -->
+          </div>
+        </div>
+
+        <!-- 3 Metric Cards -->
+        <div class="stats-tri-cards">
+          <div class="stat-metric-card deep">
+            <div class="stat-metric-title">Học Tập Sâu</div>
+            <div class="stat-metric-num" id="statDeepTime">0p 0s</div>
+            <div style="font-size:9.5px; color:var(--text-muted);">PDF, Code, Word, App học</div>
+          </div>
+          <div class="stat-metric-card online">
+            <div class="stat-metric-title">Học Trực Tuyến</div>
+            <div class="stat-metric-num" id="statOnlineTime">0p 0s</div>
+            <div style="font-size:9.5px; color:var(--text-muted);">YouTube bài giảng, FB Live</div>
+          </div>
+          <div class="stat-metric-card distracted">
+            <div class="stat-metric-title">Xao Nhãng</div>
+            <div class="stat-metric-num" id="statDistractedTime">0p 0s</div>
+            <div style="font-size:9.5px; color:var(--text-muted);">TikTok, Đọc truyện, Game</div>
+          </div>
+        </div>
+
+        <!-- Multi Progress Ratio Bar -->
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; margin-top:2px;">
+          <span style="font-weight:600; color:var(--text-secondary);">Tỷ lệ phân bổ thời gian</span>
+          <span style="font-weight:700; color:var(--emerald-light);" id="statPurityBadge">100% Tập trung</span>
+        </div>
+        <div class="multi-progress-bar">
+          <div class="prog-seg-deep" id="progSegDeep" style="width: 100%;"></div>
+          <div class="prog-seg-online" id="progSegOnline" style="width: 0%;"></div>
+          <div class="prog-seg-distracted" id="progSegDistracted" style="width: 0%;"></div>
+        </div>
+
+        <!-- App & Web List -->
+        <div style="font-size:11.5px; font-weight:700; color:#cbd5e1; margin-top:6px; display:flex; justify-content:space-between; align-items:center;">
+          <span>CHI TIẾT TỪNG TRANG WEB / PHẦN MỀM</span>
+          <span style="font-size:10px; color:var(--text-muted); font-weight:normal;">Bấm vào nhãn để đổi phân loại</span>
+        </div>
+        <div class="app-breakdown-list" id="tab3AppBreakdownList">
+          <div style="text-align:center; padding:18px; color:var(--text-dim); font-size:11px;">
+            Bắt đầu ca học để theo dõi chi tiết các ứng dụng và trang web.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 4: CÀI ĐẶT & KỶ LUẬT THÉP ==================== -->
+    <div class="tab-view" id="tab-settings">
+      <div class="settings-list-scroll">
+
+        <!-- Chu kỳ Pomodoro -->
+        <div class="settings-group">
+          <div class="settings-group-title">Chu Kỳ Học & Nghỉ</div>
+          <div class="settings-item-row">
+            <div>
+              <div class="settings-label-title">Preset Thời Gian</div>
+              <div class="settings-label-desc">Tỷ lệ tập trung sâu và nghỉ ngơi khoa học</div>
+            </div>
+            <div class="pill-selector">
+              <button class="pill-btn active" id="btnPreset5010" onclick="applyPreset(50, 10)">50/10'</button>
+              <button class="pill-btn" id="btnPreset2505" onclick="applyPreset(25, 5)">25/5'</button>
+              <button class="pill-btn" id="btnPreset9020" onclick="applyPreset(90, 20)">90/20'</button>
+            </div>
+          </div>
+
+          <div class="settings-item-row">
+            <div>
+              <div class="settings-label-title">Mục Tiêu Ca Trong Ngày</div>
+              <div class="settings-label-desc">Tự động báo cáo sau khi hoàn thành toàn bộ ca</div>
+            </div>
+            <div class="pill-selector">
+              <button class="pill-btn" id="btnTarget2" onclick="setTargetSessions(2)">2 ca</button>
+              <button class="pill-btn active" id="btnTarget3" onclick="setTargetSessions(3)">3 ca</button>
+              <button class="pill-btn" id="btnTarget4" onclick="setTargetSessions(4)">4 ca</button>
+              <button class="pill-btn" id="btnTarget0" onclick="setTargetSessions(0)">Vô hạn</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cơ Chế Kỷ Luật -->
+        <div class="settings-group">
+          <div class="settings-group-title">Cơ Chế Ép Buộc Khi Đến Giờ Nghỉ</div>
+          <div class="settings-item-row">
+            <div>
+              <div class="settings-label-title">Rèm Đen Phủ Màn Hình (Khuyên dùng)</div>
+              <div class="settings-label-desc">Hiển thị đếm ngược nghỉ ngơi và bài tập bảo vệ mắt</div>
+            </div>
+            <input type="radio" name="enforce_mode" id="enf_overlay" checked onchange="setEnforcement('overlay')">
+          </div>
+          <div class="settings-item-row">
+            <div>
+              <div class="settings-label-title">Tắt Màn Hình Hoàn Toàn</div>
+              <div class="settings-label-desc">Gửi tín hiệu tắt màn hình để bắt buộc đứng dậy</div>
+            </div>
+            <input type="radio" name="enforce_mode" id="enf_turnoff" onchange="setEnforcement('turnoff')">
+          </div>
+          <div class="settings-item-row">
+            <div>
+              <div class="settings-label-title">Khóa Máy Trạm (Lock Windows)</div>
+              <div class="settings-label-desc">Khóa màn hình máy tính để nghỉ giải lao</div>
+            </div>
+            <input type="radio" name="enforce_mode" id="enf_lock" onchange="setEnforcement('lock')">
+          </div>
+        </div>
+
+        <!-- Trợ Năng Tập Trung -->
+        <div class="settings-group">
+          <div class="settings-group-title">Trợ Năng Tập Trung & Sức Khỏe</div>
+
+          <div class="settings-item-row">
+            <div>
+              <div class="settings-label-title">Hàng Rào Trì Hoãn (Friction Barrier 3s)</div>
+              <div class="settings-label-desc">Hiện lời cảnh tỉnh 3 giây khi vô tình mở Facebook/YouTube</div>
+            </div>
+            <div class="switch-toggle on" id="toggle-friction_barrier_enabled" onclick="toggleSetting('friction_barrier_enabled')">
+              <div class="switch-knob"></div>
+            </div>
+          </div>
+
+          <div class="settings-item-row">
+            <div>
+              <div class="settings-label-title">Nhắc Nhở Bảo Vệ Thị Giác 20-20-20</div>
+              <div class="settings-label-desc">Gợi ý bài tập chớp mắt và nhìn xa khi nghỉ ngơi</div>
+            </div>
+            <div class="switch-toggle on" id="toggle-eye_care_enabled" onclick="toggleSetting('eye_care_enabled')">
+              <div class="switch-knob"></div>
+            </div>
+          </div>
+
+          <div class="settings-item-row">
+            <div>
+              <div class="settings-label-title">Nhắc Nhở Nửa Chặng Đường (Phút 25)</div>
+              <div class="settings-label-desc">Âm thanh nhẹ nhắc kiểm tra tiến độ giải quyết mục tiêu</div>
+            </div>
+            <div class="switch-toggle on" id="toggle-halfway_nudge_enabled" onclick="toggleSetting('halfway_nudge_enabled')">
+              <div class="switch-knob"></div>
+            </div>
+          </div>
+
+          <div class="settings-item-row">
+            <div>
+              <div class="settings-label-title">Nhắc Nhở Đóng Gói (Phút 48)</div>
+              <div class="settings-label-desc">Báo trước 2 phút để soát lại bài và đúc rút bẫy lỗi sai</div>
+            </div>
+            <div class="switch-toggle on" id="toggle-wrapup_nudge_enabled" onclick="toggleSetting('wrapup_nudge_enabled')">
+              <div class="switch-knob"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Âm Lượng & Chuông Báo -->
+        <div class="settings-group">
+          <div class="settings-group-title">Âm Thanh & Chuông Báo</div>
+          <div class="settings-item-row">
+            <div style="flex:1;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <div class="settings-label-title">Âm Lượng Chuông Báo</div>
+                <span style="font-size:12px; color:#38bdf8; font-weight:700;" id="soundVolLabel">80%</span>
+              </div>
+              <div class="settings-label-desc" style="margin-bottom:8px;">Tùy chỉnh độ to của chuông kết thúc ca học và hết giờ nghỉ</div>
+              <div style="display:flex; align-items:center; gap:12px;">
+                <input type="range" min="0" max="100" value="80" id="soundVolRange" style="flex:1; accent-color:#06b6d4; cursor:pointer;" oninput="updateSoundVolume(this.value)">
+                <button class="btn-hero-ghost" style="height:28px; padding:0 12px; font-size:11px;" onclick="testSoundAlert()">
+                  <span>🔊 Nghe thử</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 4. BOTTOM STATUS BAR -->
+  <div class="bottom-bar">
+    <div id="footerStatsLabel" style="cursor:pointer;" onclick="switchTab('analytics')" title="Bấm để xem thống kê Web/App chi tiết">
+      Hôm nay: 0 ca (0 phút) • 100% Tinh khiết 📊 <span style="text-decoration:underline; color:#38bdf8;">[Xem Thống Kê]</span>
+    </div>
+    <button class="footer-action-link" onclick="switchTab('parking')" title="Nhấn Ctrl+Shift+D để cất nhanh ý tưởng">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      <span>💡 Sổ Ý Tưởng (Ctrl+Shift+D)</span>
+    </button>
+  </div>
+
+  <!-- TOAST NOTIFICATIONS -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- MODAL 1: PURITY & APP TRACKING REPORT -->
+  <div class="modal-backdrop" id="purityReportModal">
+    <div class="modal-card">
+      <div class="modal-header-row">
+        <div class="modal-title-wrap">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+          <div>
+            <div class="modal-title-text">BÁO CÁO NĂNG SUẤT & THỜI GIAN SỬ DỤNG WEB/APP</div>
+            <div class="modal-sub-text">Đo lường thời gian tập trung thực tế vs thời gian dùng các trang web ngoài lề</div>
+          </div>
+        </div>
+        <button class="btn-close-modal" onclick="closePurityReportModal()">✕</button>
+      </div>
+
+      <!-- Hero Purity Score Banner -->
+      <div class="purity-hero-banner">
+        <div class="purity-radial-dial">
+          <div class="purity-score-digit" id="reportPurityScore">100%</div>
+          <div class="purity-score-sub">Độ tinh khiết</div>
+        </div>
+        <div class="purity-summary-col">
+          <div class="purity-status-headline" id="reportPurityHeadline">🏆 TUYỆT VỜI • DÒNG CHẢY SÂU</div>
+          <div class="purity-metrics-row">
+            <div class="metric-box">
+              <div class="metric-label">Tập trung thuần túy</div>
+              <div class="metric-val pure" id="reportPureTime">50 phút 00 giây</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-label">Mở web xao nhãng</div>
+              <div class="metric-val distracted" id="reportDistractedTime">0 giây</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- App & Website Breakdown Section -->
+      <div class="report-section-label">CHI TIẾT THỜI GIAN MỞ TRANG WEB / ỨNG DỤNG</div>
+      <div class="app-breakdown-list" id="reportAppBreakdownList">
+        <div style="text-align:center; padding:14px; color:var(--text-dim); font-size:11px;">
+          Chưa có hoạt động xao nhãng nào được ghi nhận trong ca này!
+        </div>
+      </div>
+
+      <!-- Incident Timeline -->
+      <div class="report-section-label" style="margin-top:6px;">LỊCH SỬ CÁC LẦN MỞ NGOÀI LỀ</div>
+      <div class="timeline-list" id="reportIncidentTimeline">
+        <div style="color:var(--text-dim); font-size:11px; padding:4px 0;">Không có vi phạm ngoài lề.</div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+        <button class="btn-hero-ghost" style="height:32px; padding:0 12px; font-size:11px;" onclick="copyPuritySummary()">📋 Sao chép báo cáo</button>
+        <button class="btn-hero-primary" style="height:32px; padding:0 18px; font-size:11px;" onclick="closePurityReportModal()">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: CUSTOM TIMER & MOVIE MODE -->
+  <div class="modal-backdrop" id="customTimerModal">
+    <div class="modal-card">
+      <div class="modal-header-row">
+        <div class="modal-title-wrap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <div>
+            <div class="modal-title-text">TÙY CHỈNH THỜI GIAN & HẸN GIỜ XEM PHIM</div>
+            <div class="modal-sub-text">Tự do chỉnh số phút tập trung hoặc hẹn giờ xem phim có kiểm soát</div>
+          </div>
+        </div>
+        <button class="btn-close-modal" onclick="closeCustomTimerModal()">✕</button>
+      </div>
+
+      <!-- 1. Tùy chỉnh chu kỳ học & nghỉ -->
+      <div class="report-section-label">TÙY CHỈNH CHU KỲ (HỌC TẬP & NGHỈ NGƠI)</div>
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+        <div style="flex:1;">
+          <div style="font-size:11px; color:#94a3b8; margin-bottom:4px; font-weight:600;">Thời gian học</div>
+          <div class="custom-input-box" style="margin-bottom:0;">
+            <input type="number" min="1" max="360" id="customMinutesInput" value="50" class="custom-minutes-input">
+            <span style="font-size:12px; color:var(--text-secondary); font-weight:500;">phút</span>
+          </div>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:11px; color:#94a3b8; margin-bottom:4px; font-weight:600;">Thời gian nghỉ</div>
+          <div class="custom-input-box" style="margin-bottom:0;">
+            <input type="number" min="1" max="60" id="customBreakMinutesInput" value="10" class="custom-minutes-input">
+            <span style="font-size:12px; color:var(--text-secondary); font-weight:500;">phút</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:flex-end; margin-bottom:12px;">
+        <button class="btn-hero-primary" style="height:34px; padding:0 20px;" onclick="applyCustomTimerMinutes()">Áp dụng chu kỳ</button>
+      </div>
+
+      <!-- 2. Hẹn Giờ Xem Phim -->
+      <div style="border-top:1px solid var(--border); padding-top:10px; margin-top:6px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+          <div style="font-size:12px; font-weight:700; color:#fbbf24; display:flex; align-items:center; gap:5px;">
+            <span>🎬 HẸN GIỜ XEM PHIM / GIẢI TRÍ</span>
+          </div>
+          <span style="font-size:9.5px; background:rgba(245,158,11,0.12); color:#fbbf24; padding:1px 6px; border-radius:4px; border:1px solid rgba(245,158,11,0.25);">Tạm ngưng chặn phim</span>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">
+          Hẹn giờ cho buổi xem phim của bạn. Khi hết giờ, chuông nhắc nhở sẽ rung lên để bạn tắt phim, đi ngủ hoặc vận động bảo vệ thị giác.
+        </div>
+        <div class="movie-presets-grid">
+          <div class="movie-card-btn" onclick="startMovieTimer(45)">
+            <span class="m-title">45 Phút</span>
+            <span class="m-desc">1 Tập Anime / Drama</span>
+          </div>
+          <div class="movie-card-btn" onclick="startMovieTimer(90)">
+            <span class="m-title">90 Phút</span>
+            <span class="m-desc">1 Phim điện ảnh vừa</span>
+          </div>
+          <div class="movie-card-btn" onclick="startMovieTimer(120)">
+            <span class="m-title">120 Phút</span>
+            <span class="m-desc">1 Phim rạp bom tấn</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: MOVIE FINISHED MODAL -->
+  <div class="modal-backdrop" id="movieFinishedModal">
+    <div class="modal-card" style="text-align:center; align-items:center;">
+      <div style="font-size:36px; margin-bottom:4px;">🍿</div>
+      <div style="font-size:16px; font-weight:700; color:#fbbf24; margin-bottom:4px;">BUỔI XEM PHIM ĐÃ KẾT THÚC!</div>
+      <div style="font-size:12px; color:#cbd5e1; max-width:360px; margin-bottom:16px;" id="movieFinishedNotice">
+        Bạn đã thưởng thức trọn vẹn bộ phim. Hãy tắt màn hình, chớp mắt và đi lại thả lỏng cơ thể để bảo vệ thị giác và giấc ngủ nhé!
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button class="btn-hero-primary" style="padding:0 20px;" onclick="closeMovieFinishedModal()">Đã xem xong, đi nghỉ ngơi</button>
+        <button class="btn-hero-ghost" style="padding:0 14px;" onclick="extendMovieTimer(15)">Xem thêm 15'</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- REST MODE MODAL (When Break Mode is On) -->
+  <div class="rest-modal-overlay" id="restModalOverlay">
+    <div class="breathing-pulse-ring">
+      <div class="rest-countdown-clock" id="restClockDigits">10:00</div>
+    </div>
+    <div style="font-size:17px; font-weight:600; color:#fff; margin-bottom:4px;">GIỜ NGHỈ NGƠI & HỒI PHỤC</div>
+    <div style="font-size:12px; color:#cbd5e1; max-width:360px; margin-bottom:16px;" id="restHealthTip">
+      Quy tắc 20-20-20: Hãy nhìn vào một điểm xa 6 mét trong 20 giây để các cơ quan điều tiết mắt được thả lỏng hoàn toàn.
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn-hero-primary" style="padding:0 20px;" onclick="pyCall('start_next_session_early')">Bắt đầu ca tiếp theo sớm</button>
+    </div>
+  </div>
+
+  <!-- REFLECTION MODAL (End of Focus Session) -->
+  <div class="reflection-modal" id="reflectionModal">
+    <div class="reflection-box">
+      <div style="font-size:14.5px; font-weight:700; color:#fff;">🎓 TỔNG KẾT & ĐÁNH GIÁ CA HỌC</div>
+      <div style="font-size:11.5px; color:var(--text-muted);">Dành 20 giây đánh giá mức độ tập trung và lưu ý cho ca tiếp theo.</div>
+
+      <div style="display:flex; gap:6px;">
+        <button class="pill-btn active" id="rateSmooth" onclick="selectRating('smooth')" style="flex:1;">🌟 Tập trung sâu</button>
+        <button class="pill-btn" id="rateTrap" onclick="selectRating('trap')" style="flex:1;">📚 Học trực tuyến</button>
+        <button class="pill-btn" id="rateDistracted" onclick="selectRating('distracted')" style="flex:1;">⚠️ Có xao nhãng</button>
+      </div>
+
+      <textarea id="reflectionTrapText" placeholder="Ghi chú nhanh kết quả đạt được hoặc lưu ý cho ca tiếp theo..." style="width:100%; height:75px; background:rgba(0,0,0,0.3); border:1px solid var(--border); border-radius:6px; padding:8px; color:#fff; font-size:12px; outline:none; resize:none;"></textarea>
+
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:11px; color:var(--text-dim);" id="reflectionCountdown">Tự động vào giờ nghỉ sau: 20s</span>
+        <button class="btn-hero-primary" style="padding:0 16px; height:32px;" onclick="submitSessionReflection()">Lưu & Nghỉ ngơi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EYE CARE 50/10 FINISHED MODAL (Screen Time Ended) -->
+  <div class="friction-modal" id="eyeCareFinishedModal" style="background:rgba(10, 25, 47, 0.98);">
+    <div style="font-size:36px; margin-bottom:10px;">👁️</div>
+    <div style="font-size:17px; font-weight:700; color:#fff; margin-bottom:6px;" id="eyeCareFinishedTitle">ĐÃ HẾT 50 PHÚT DÙNG MÁY TÍNH!</div>
+    <div style="font-size:12px; color:#94a3b8; max-width:380px; margin-bottom:18px; line-height:1.5;">
+      Đã đến giờ nghỉ ngơi 10 phút. Hãy rời mắt khỏi màn hình để bảo vệ thị lực và nạp lại năng lượng cho não bộ.
+    </div>
+    
+    <div style="display:flex; flex-direction:column; gap:8px; width:100%; max-width:380px; margin-bottom:20px; text-align:left;">
+      <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 14px; display:flex; align-items:center; gap:12px;">
+        <span style="font-size:20px;">🔭</span>
+        <div>
+          <div style="font-size:12px; font-weight:600; color:#e2e8f0;">Quy tắc 20-20-20</div>
+          <div style="font-size:11px; color:#94a3b8;">Nhìn xa 6 mét (ngoài cửa sổ) trong ít nhất 20 giây</div>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 14px; display:flex; align-items:center; gap:12px;">
+        <span style="font-size:20px;">💧</span>
+        <div>
+          <div style="font-size:12px; font-weight:600; color:#e2e8f0;">Chớp mắt & Uống nước</div>
+          <div style="font-size:11px; color:#94a3b8;">Uống 1 cốc nước ấm và chớp mắt chậm để cấp ẩm giác mạc</div>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 14px; display:flex; align-items:center; gap:12px;">
+        <span style="font-size:20px;">🧘</span>
+        <div>
+          <div style="font-size:12px; font-weight:600; color:#e2e8f0;">Đứng dậy vươn vai</div>
+          <div style="font-size:11px; color:#94a3b8;">Rời ghế, xoay nhẹ khớp cổ vai gáy để thả lỏng cơ thể</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:10px;">
+      <button class="btn-hero-primary" style="padding:0 22px; height:38px; font-weight:600;" onclick="startEyeCareBreak()">🌿 Bắt đầu 10 phút nghỉ mắt</button>
+      <button class="btn-hero-ghost" style="padding:0 16px; height:38px;" onclick="extendEyeCareWork()">⏳ Dùng thêm 5 phút</button>
+    </div>
+  </div>
+
+  <!-- FRICTION BARRIER MODAL (When Distraction Detected) -->
+  <div class="friction-modal" id="frictionModal">
+    <div style="font-size:32px; margin-bottom:8px;">⚠️</div>
+    <div style="font-size:16px; font-weight:700; color:#fff; margin-bottom:4px;">DỪNG LẠI MỘT CHÚT!</div>
+    <div style="font-size:11.5px; color:#38bdf8; font-weight:600; margin-bottom:10px; max-width:380px; word-break:break-word; background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.25); border-radius:6px; padding:5px 12px;" id="frictionDetectedTitle">Phát hiện: Trang web / Ứng dụng giải trí</div>
+    <div style="font-size:12px; color:#94a3b8; max-width:380px; margin-bottom:16px; line-height:1.5;">
+      Cửa sổ này nằm trong danh sách giải trí / mạng xã hội. Nếu bạn đang học bài trực tuyến (video bài giảng, livestream, tài liệu), hãy chọn xác nhận học bài bên dưới.
+    </div>
+    <div style="display:flex; flex-direction:column; gap:8px; width:100%; max-width:320px;">
+      <button class="btn-hero-primary" style="padding:0 20px; height:36px; background:linear-gradient(135deg, #0ea5e9, #2563eb);" onclick="pyCall('friction_allow_as_study')">🎓 Tôi đang học bài / Xem bài giảng</button>
+      <button class="btn-hero-ghost" style="padding:0 20px; height:36px; border-color:rgba(16,185,129,0.4); color:#10b981;" onclick="pyCall('friction_back_to_study')">⬅️ Quay lại bàn học ngay</button>
+      <button class="btn-hero-ghost" style="padding:0 16px; height:34px; font-size:11.5px; color:#94a3b8;" id="btnFrictionAllow" onclick="pyCall('friction_allow_distraction')">⚠️ Chỉ mở giải trí chốc lát (3s)</button>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // STATE MANAGEMENT
+    // =========================================================================
+    let remainingSeconds = 3000;
+    let totalTargetSeconds = 3000;
+    let appState = "IDLE";
+    let currentSession = 1;
+    let targetSessions = 3;
+    let activeTaskIndex = 0;
+    let currentMode = "focus"; // "focus" or "movie"
+
+    // 100% Clean Tasks List by Default (Zero Pre-Made Sample Junk)
+    let tasks = [];
+
+    let parkingNotes = [];
+
+    let selectedRating = "smooth";
+    let reflCountdownSec = 20;
+    let reflTimer = null;
+    let frictionCountSec = 3;
+    let frictionTimer = null;
+    let cachedPurityData = null;
+
+    // =========================================================================
+    // SWISS DIAL TICKS (60 Precision Minute Marks)
+    // =========================================================================
+    function initDialTicks() {
+      const g = document.getElementById("dialTicksGroup");
+      if (!g) return;
+      g.innerHTML = "";
+      const cx = 84, cy = 84;
+      for (let i = 0; i < 60; i++) {
+        const angle = (i * 6) * (Math.PI / 180);
+        const isMajor = (i % 5 === 0);
+        const rInner = isMajor ? 67 : 70;
+        const rOuter = 74;
+        const x1 = cx + rInner * Math.cos(angle);
+        const y1 = cy + rInner * Math.sin(angle);
+        const x2 = cx + rOuter * Math.cos(angle);
+        const y2 = cy + rOuter * Math.sin(angle);
+
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", x1);
+        line.setAttribute("y1", y1);
+        line.setAttribute("x2", x2);
+        line.setAttribute("y2", y2);
+        line.setAttribute("class", isMajor ? "dial-tick-major" : "dial-tick-subtle");
+        g.appendChild(line);
+      }
+    }
+    initDialTicks();
+
+    // =========================================================================
+    // PYWEBVIEW BRIDGE CALL
+    // =========================================================================
+    function pyCall(method, ...args) {
+      if (window.pywebview && window.pywebview.api && window.pywebview.api[method]) {
+        return window.pywebview.api[method](...args);
+      }
+      console.log("[Bridge pyCall]", method, args);
+      return Promise.resolve();
+    }
+
+    function handleTitlebarDblClick(e) {
+      if (e.target.closest('.tb-btn') || e.target.closest('.cycle-pill-quick')) {
+        return;
+      }
+      pyCall('toggle_mini_mode');
+    }
+
+    function handleMainActionClick() {
+      if (appState === "IDLE" || appState === "PAUSED") {
+        pyCall("start_timer");
+      } else if (appState === "FOCUS") {
+        pyCall("toggle_pause");
+      } else if (appState === "BREAK") {
+        pyCall("start_next_session_early");
+      }
+    }
+
+    // Spacebar & Global Hotkeys
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "Space" && e.target.tagName !== "INPUT" && e.target.tagName !== "TEXTAREA") {
+        e.preventDefault();
+        handleMainActionClick();
+      } else if (e.code === "KeyD" && e.ctrlKey && e.shiftKey) {
+        e.preventDefault();
+        switchTab('parking');
+        setTimeout(() => {
+          const inp = document.getElementById("tab2CaptureInput");
+          if (inp) { inp.focus(); inp.select(); }
+        }, 50);
+      } else if (e.code === "F8" || (e.code === "KeyM" && (e.ctrlKey || e.altKey))) {
+        e.preventDefault();
+        pyCall("toggle_mini_mode");
+      } else if (e.code === "F9") {
+        e.preventDefault();
+        openCustomTimerModal("movie");
+      }
+    });
+
+    // =========================================================================
+    // 2 APPLICATION MODES: STUDY vs EYE CARE
+    // =========================================================================
+    let currentAppMode = "study"; // "study" or "eyecare"
+    let isYoutubeFbStudyAllowed = false;
+
+    function switchAppMode(mode) {
+      currentAppMode = mode;
+      document.querySelectorAll(".mode-segment-btn").forEach(b => b.classList.remove("active"));
+      if (mode === "eyecare") {
+        document.getElementById("btnModeEyeCare").classList.add("active");
+        document.getElementById("studyChecklistWrapper").style.display = "none";
+        document.getElementById("heroActiveTargetCard").style.display = "none";
+        document.getElementById("eyeCareGuideWrapper").style.display = "flex";
+        document.getElementById("tab1TitleText").innerText = "Bảo Vệ Mắt";
+        document.getElementById("btnToggleYtbStudy").style.display = "none";
+        
+        // Setup Eye Care durations: 50, 45, 60, 30
+        document.getElementById("studyDurationGroup").innerHTML = `
+          <button class="duration-pill active" id="durPill50" onclick="quickSetTimer(50)">50/10'</button>
+          <button class="duration-pill" id="durPill45" onclick="quickSetTimer(45)">45/5'</button>
+          <button class="duration-pill" id="durPill60" onclick="quickSetTimer(60)">60/10'</button>
+          <button class="duration-pill" id="durPill30" onclick="quickSetTimer(30)">30/5'</button>
+        `;
+        pyCall("set_app_mode", "eyecare");
+        showToast("👁️ Chế độ Nghỉ Mắt 50/10: Dùng máy 50' nghỉ mắt 10', không chặn web");
+      } else {
+        document.getElementById("btnModeStudy").classList.add("active");
+        document.getElementById("studyChecklistWrapper").style.display = "flex";
+        document.getElementById("heroActiveTargetCard").style.display = "flex";
+        document.getElementById("eyeCareGuideWrapper").style.display = "none";
+        document.getElementById("tab1TitleText").innerText = "Bàn Học";
+        document.getElementById("btnToggleYtbStudy").style.display = "inline-flex";
+
+        // Setup Study durations: 25, 45, 50, 90, 120
+        document.getElementById("studyDurationGroup").innerHTML = `
+          <button class="duration-pill" id="durPill25" onclick="quickSetTimer(25)">25'</button>
+          <button class="duration-pill" id="durPill45" onclick="quickSetTimer(45)">45'</button>
+          <button class="duration-pill active" id="durPill50" onclick="quickSetTimer(50)">50'</button>
+          <button class="duration-pill" id="durPill90" onclick="quickSetTimer(90)">90'</button>
+          <button class="duration-pill" id="durPill120" onclick="quickSetTimer(120)">120'</button>
+        `;
+        pyCall("set_app_mode", "study");
+        showToast("🎓 Chế độ Tập Trung Học Tập: Pomodoro + Checklist + Chặn xao nhãng");
+      }
+    }
+
+    function toggleYoutubeFbStudy() {
+      isYoutubeFbStudyAllowed = !isYoutubeFbStudyAllowed;
+      const btn1 = document.getElementById("btnToggleYtbStudy");
+      const btn2 = document.getElementById("tab3ToggleYtbStudy");
+      [btn1, btn2].forEach(b => {
+        if (!b) return;
+        if (isYoutubeFbStudyAllowed) {
+          b.classList.add("active");
+          b.innerHTML = `<span>✓ Đang cho phép YouTube/FB học bài</span>`;
+        } else {
+          b.classList.remove("active");
+          b.innerHTML = `<span>🎓 YouTube/FB học</span>`;
+        }
+      });
+      pyCall("set_youtube_fb_study", isYoutubeFbStudyAllowed);
+      if (isYoutubeFbStudyAllowed) {
+        showToast("🎓 Đã bật: YouTube & Facebook được tính vào giờ học trực tuyến");
+      } else {
+        showToast("🚫 Đã tắt: YouTube & Facebook sẽ được kiểm soát để tránh lướt mạng");
+      }
+    }
+
+    // =========================================================================
+    // TAB NAVIGATION
+    // =========================================================================
+    function switchTab(tabKey) {
+      document.querySelectorAll(".tab-pill").forEach(p => p.classList.remove("active"));
+      document.querySelectorAll(".tab-view").forEach(v => v.classList.remove("active"));
+
+      const tabs = ["study", "parking", "analytics", "settings"];
+      const idx = tabs.indexOf(tabKey);
+      if (idx !== -1) {
+        document.querySelectorAll(".tab-pill")[idx].classList.add("active");
+        document.getElementById(`tab-${tabKey}`).classList.add("active");
+      }
+
+      if (tabKey === "parking") {
+        renderParkingList();
+      } else if (tabKey === "analytics") {
+        loadAnalyticsTab();
+      }
+    }
+
+    // =========================================================================
+    // DYNAMIC MICRO-CHECKLIST (Clean, Empty by Default)
+    // =========================================================================
+    function renderTasksList() {
+      const container = document.getElementById("tasksListContainer");
+      if (!container) return;
+      container.innerHTML = "";
+
+      const total = tasks.length;
+      const done = tasks.filter(t => t.done).length;
+
+      const progressText = document.getElementById("checklistProgressText");
+      const clearBtn = document.getElementById("btnClearTasksList");
+
+      if (total === 0) {
+        progressText.innerText = `0/0 hoàn thành`;
+        clearBtn.style.display = "none";
+        container.innerHTML = `<div class="empty-tasks-placeholder">Chưa có mục tiêu nào. Nhập mục tiêu ca này vào ô bên dưới...</div>`;
+      } else {
+        clearBtn.style.display = "flex";
+        if (done === total) {
+          progressText.innerHTML = `<span style="color:var(--emerald-light); font-weight:600;">✓ Hoàn thành ${done}/${total}!</span>`;
+        } else {
+          progressText.innerText = `${done}/${total} hoàn thành`;
+        }
+      }
+
+      const fill = document.getElementById("checklistProgressFill");
+      fill.style.width = total > 0 ? `${(done / total) * 100}%` : "0%";
+
+      tasks.forEach((task, idx) => {
+        const row = document.createElement("div");
+        row.className = `task-item-row ${task.done ? 'done' : ''} ${idx === activeTaskIndex ? 'is-active-target' : ''}`;
+
+        // Single Circular SVG Checkbox
+        const chk = document.createElement("div");
+        chk.className = `round-check-circle ${task.done ? 'checked' : ''}`;
+        chk.title = task.done ? "Đánh dấu chưa xong" : "Đánh dấu hoàn thành";
+        chk.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>`;
+        chk.onclick = (e) => {
+          e.stopPropagation();
+          pyCall("toggle_task", idx);
+          task.done = !task.done;
+          // Auto-promote next unfinished task if current active focus task was just completed
+          if (task.done && idx === activeTaskIndex) {
+            const nextIdx = tasks.findIndex((t, i) => i !== idx && !t.done);
+            if (nextIdx !== -1) activeTaskIndex = nextIdx;
+          }
+          renderTasksList();
+          updateHeroActiveTarget();
+        };
+
+        // Text Input (Clicking/Focusing selects as active focus goal)
+        const input = document.createElement("input");
+        input.className = "task-input-field";
+        input.value = task.text;
+        input.title = "Nhấp để chỉnh sửa hoặc chọn làm mục tiêu trọng tâm";
+        input.onfocus = () => {
+          if (activeTaskIndex !== idx) {
+            activeTaskIndex = idx;
+            renderTasksList();
+            updateHeroActiveTarget();
+            showToast(`🎯 Trọng tâm ca: ${task.text}`);
+          }
+        };
+        input.onchange = () => pyCall("update_task_text", idx, input.value);
+        input.onkeydown = (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            focusChecklistInput();
+          }
+        };
+
+        // Active Target Badge (Shown only on the chosen focus task)
+        let activeBadge = null;
+        if (idx === activeTaskIndex && !task.done) {
+          activeBadge = document.createElement("span");
+          activeBadge.className = "task-active-badge";
+          activeBadge.innerText = "Trọng tâm";
+          activeBadge.title = "Mục tiêu trọng tâm ca học hiện tại";
+        }
+
+        // Trash Button
+        const trash = document.createElement("button");
+        trash.className = "btn-delete-task";
+        trash.title = "Xóa bước này";
+        trash.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+        trash.onclick = (e) => {
+          e.stopPropagation();
+          pyCall("delete_task", idx);
+          tasks.splice(idx, 1);
+          if (activeTaskIndex >= tasks.length) activeTaskIndex = Math.max(0, tasks.length - 1);
+          renderTasksList();
+          updateHeroActiveTarget();
+        };
+
+        row.appendChild(chk);
+        row.appendChild(input);
+        if (activeBadge) row.appendChild(activeBadge);
+        row.appendChild(trash);
+        container.appendChild(row);
+      });
+
+      updateHeroActiveTarget();
+    }
+
+    function updateHeroActiveTarget() {
+      const heroLabel = document.getElementById("heroActiveTargetLabel");
+      const heroTag = document.getElementById("heroTargetTag");
+      if (currentMode === "movie") {
+        heroTag.innerText = "Xem Phim";
+        heroTag.style.color = "#fbbf24";
+        heroTag.style.background = "rgba(245,158,11,0.14)";
+        heroTag.style.borderColor = "rgba(245,158,11,0.25)";
+        heroLabel.innerText = "🎬 Ca xem phim & thư giãn có hẹn giờ";
+      } else {
+        heroTag.innerText = "Mục Tiêu Ca";
+        heroTag.style.color = "var(--cyan)";
+        heroTag.style.background = "rgba(6,182,212,0.14)";
+        heroTag.style.borderColor = "rgba(6,182,212,0.25)";
+        if (tasks.length > 0 && tasks[activeTaskIndex]) {
+          heroLabel.innerText = tasks[activeTaskIndex].text;
+        } else {
+          heroLabel.innerText = "Chưa chọn mục tiêu nào";
+        }
+      }
+    }
+
+    function handleNewTaskKeydown(e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const input = document.getElementById("newTaskInput");
+        const val = input.value.trim();
+        if (val) {
+          pyCall("add_task", val);
+          tasks.push({ text: val, done: false });
+          if (tasks.length === 1) activeTaskIndex = 0;
+          input.value = "";
+          renderTasksList();
+          showToast("✓ Đã thêm mục tiêu");
+        }
+      }
+    }
+
+    function clearAllTasks() {
+      pyCall("clear_all_tasks");
+      tasks = [];
+      activeTaskIndex = 0;
+      renderTasksList();
+      showToast("✓ Đã xóa sạch mục tiêu");
+    }
+
+    function focusChecklistInput() {
+      const inp = document.getElementById("newTaskInput");
+      if (inp) inp.focus();
+    }
+
+    window.updateTasks = function(newTasks) {
+      if (newTasks && Array.isArray(newTasks)) {
+        tasks = newTasks;
+        if (activeTaskIndex >= tasks.length) activeTaskIndex = 0;
+        renderTasksList();
+      }
+    };
+
+    // =========================================================================
+    // CUSTOM TIMER & MOVIE MODE LOGIC
+    // =========================================================================
+    function quickSetTimer(minutes) {
+      document.querySelectorAll(".duration-pill").forEach(p => p.classList.remove("active"));
+      const pill = document.getElementById(`durPill${minutes}`);
+      if (pill) pill.classList.add("active");
+
+      currentMode = "focus";
+      document.body.classList.remove("movie-mode-active");
+
+      if (currentAppMode === "eyecare") {
+        const breakM = (minutes >= 50) ? 10 : 5;
+        pyCall("apply_preset", minutes, breakM);
+        showToast(`👁️ Chu kỳ Nghỉ Mắt: Dùng máy ${minutes}' • Nghỉ mắt ${breakM}'`);
+      } else {
+        pyCall("set_custom_timer", minutes, "focus");
+        showToast(`✓ Đã đặt ca học ${minutes} phút`);
+      }
+    }
+
+    function openCustomTimerModal(defaultMode = "focus") {
+      const modal = document.getElementById("customTimerModal");
+      modal.classList.add("active");
+      document.getElementById("customMinutesInput").value = Math.round(totalTargetSeconds / 60) || 50;
+      const breakInput = document.getElementById("customBreakMinutesInput");
+      if (breakInput) {
+        breakInput.value = (currentAppConfig && currentAppConfig.break_minutes) || 10;
+      }
+    }
+
+    function closeCustomTimerModal() {
+      const modal = document.getElementById("customTimerModal");
+      modal.classList.remove("active");
+    }
+
+    function applyCustomTimerMinutes() {
+      const focusM = parseInt(document.getElementById("customMinutesInput").value) || 50;
+      const breakInput = document.getElementById("customBreakMinutesInput");
+      const breakM = breakInput ? (parseInt(breakInput.value) || 10) : 10;
+      closeCustomTimerModal();
+      document.querySelectorAll(".duration-pill").forEach(p => p.classList.remove("active"));
+      currentMode = "focus";
+      document.body.classList.remove("movie-mode-active");
+      pyCall("apply_preset", focusM, breakM);
+      showToast(`✓ Đã đặt ca: ${focusM} phút học • ${breakM} phút nghỉ`);
+    }
+
+    function startMovieTimer(minutes) {
+      closeCustomTimerModal();
+      document.querySelectorAll(".duration-pill").forEach(p => p.classList.remove("active"));
+      currentMode = "movie";
+      document.body.classList.add("movie-mode-active");
+      pyCall("set_custom_timer", minutes, "movie");
+      showToast(`🎬 Đã hẹn giờ xem phim: ${minutes} phút (Tạm ngưng chặn web)`);
+      updateHeroActiveTarget();
+    }
+
+    window.showMovieFinishedModal = function(purityData) {
+      cachedPurityData = purityData;
+      const modal = document.getElementById("movieFinishedModal");
+      modal.classList.add("active");
+      const mins = Math.round(totalTargetSeconds / 60);
+      document.getElementById("movieFinishedNotice").innerText = 
+        `Bạn đã xem trọn vẹn ${mins} phút. Hãy tắt màn hình, chớp mắt và đi lại thả lỏng cơ thể để bảo vệ thị giác và giấc ngủ nhé!`;
+    };
+
+    function closeMovieFinishedModal() {
+      document.getElementById("movieFinishedModal").classList.remove("active");
+      currentMode = "focus";
+      document.body.classList.remove("movie-mode-active");
+      quickSetTimer(50);
+    }
+
+    function extendMovieTimer(extraMinutes) {
+      document.getElementById("movieFinishedModal").classList.remove("active");
+      startMovieTimer(extraMinutes);
+    }
+
+    // =========================================================================
+    // PURITY REPORT & APP USAGE MODAL
+    // =========================================================================
+    function openPurityReportModal() {
+      switchTab('analytics');
+    }
+
+    function closePurityReportModal() {
+      const m = document.getElementById("purityReportModal");
+      if (m) m.classList.remove("active");
+    }
+
+    window.showPurityReportModal = function(data) {
+      renderPurityModalContent(data);
+      document.getElementById("purityReportModal").classList.add("active");
+    };
+
+    function renderPurityModalContent(data) {
+      if (!data) return;
+      cachedPurityData = data;
+
+      const score = data.purity_percent !== undefined ? data.purity_percent : 100;
+      document.getElementById("reportPurityScore").innerText = `${score}%`;
+      
+      const headline = document.getElementById("reportPurityHeadline");
+      if (score >= 90) {
+        headline.innerText = "🏆 XUẤT SẮC • TRẠNG THÁI DÒNG CHẢY SÂU";
+        headline.style.color = "var(--emerald-light)";
+      } else if (score >= 75) {
+        headline.innerText = "🌿 KHÁ TỐT • CẦN GIẢM MỞ TAB NGOÀI";
+        headline.style.color = "var(--amber)";
+      } else {
+        headline.innerText = "⚠️ XAO NHÃNG NHIỀU • CẦN RÈN KỶ LUẬT THÉP";
+        headline.style.color = "var(--rose)";
+      }
+
+      document.getElementById("reportPureTime").innerText = data.pure_str || "50 phút";
+      document.getElementById("reportDistractedTime").innerText = data.distracted_str || "0 giây";
+
+      // Render App Breakdown
+      const breakdownContainer = document.getElementById("reportAppBreakdownList");
+      breakdownContainer.innerHTML = "";
+
+      if (data.breakdown && data.breakdown.length > 0) {
+        data.breakdown.forEach(item => {
+          const row = document.createElement("div");
+          row.className = "app-breakdown-row";
+          row.innerHTML = `
+            <div class="app-info-line">
+              <span class="app-name">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg>
+                ${item.app}
+              </span>
+              <span class="app-duration-tag">${item.time_str} (${item.percent}%)</span>
+            </div>
+            <div class="app-bar-track">
+              <div class="app-bar-fill" style="width: ${item.percent}%;"></div>
+            </div>
+          `;
+          breakdownContainer.appendChild(row);
+        });
+      } else {
+        breakdownContainer.innerHTML = `
+          <div style="text-align:center; padding:12px; color:var(--text-muted); font-size:11px;">
+            ✓ Không phát hiện trang web hoặc ứng dụng xao nhãng nào trong ca này!
+          </div>
+        `;
+      }
+
+      // Render Incident Timeline
+      const timelineContainer = document.getElementById("reportIncidentTimeline");
+      timelineContainer.innerHTML = "";
+
+      if (data.events && data.events.length > 0) {
+        data.events.forEach(ev => {
+          const item = document.createElement("div");
+          item.className = "timeline-item";
+          item.innerHTML = `
+            <span class="timeline-time">${ev.time}</span>
+            <span style="color:var(--rose);">[${ev.keyword}]</span>
+            <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${ev.title}</span>
+            <span style="font-family:var(--mono); color:var(--text-dim);">${ev.duration}s</span>
+          `;
+          timelineContainer.appendChild(item);
+        });
+      } else {
+        timelineContainer.innerHTML = `<div style="color:var(--text-dim); font-size:11px;">Không có sự kiện vi phạm ngoài lề.</div>`;
+      }
+    }
+
+    function copyPuritySummary() {
+      if (!cachedPurityData) {
+        pyCall("get_purity_report").then(data => {
+          cachedPurityData = data;
+          copyPuritySummary();
+        });
+        return;
+      }
+      const text = `📊 BÁO CÁO NĂNG SUẤT FOCUS FLOW:
+• Độ tinh khiết: ${cachedPurityData.purity_percent || 100}%
+• 🎓 Học tập sâu: ${cachedPurityData.deep_work_str || "0s"}
+• 🌐 Học trực tuyến: ${cachedPurityData.online_study_str || "0s"}
+• ⚠️ Xao nhãng: ${cachedPurityData.distracted_str || "0s"}`;
+      navigator.clipboard.writeText(text);
+      showToast("✓ Đã sao chép tóm tắt thống kê vào Clipboard!");
+    }
+
+    // =========================================================================
+    // QUICK DISTRACTION CAPTURE (Sổ Xao Nhãng)
+    // =========================================================================
+    function handleQuickCaptureKeydown(e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        submitQuickCapture();
+      }
+    }
+
+    function submitQuickCapture() {
+      const input = document.getElementById("quickCaptureInput");
+      const val = input.value.trim();
+      if (!val) return;
+      pyCall("save_quick_dump", val);
+      const now = new Date();
+      const timeStr = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
+      parkingNotes.unshift({ time: timeStr, text: val, resolved: false, type: "manual" });
+      input.value = "";
+      renderParkingList();
+      showToast("✓ Đã cất vào Sổ Xao Nhãng. Tiếp tục nhé!");
+    }
+
+    function submitTab2Capture() {
+      const input = document.getElementById("tab2CaptureInput");
+      const val = input.value.trim();
+      if (!val) return;
+      pyCall("save_quick_dump", val);
+      const now = new Date();
+      const timeStr = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
+      parkingNotes.unshift({ time: timeStr, text: val, resolved: false, type: "manual" });
+      input.value = "";
+      renderParkingList();
+    }
+
+    function renderParkingList() {
+      const container = document.getElementById("parkingListContainer");
+      if (!container) return;
+      container.innerHTML = "";
+
+      const unresolvedCount = parkingNotes.filter(n => !n.resolved).length;
+      const badge = document.getElementById("parkingTabBadge");
+      if (badge) {
+        if (unresolvedCount > 0) {
+          badge.innerText = unresolvedCount;
+          badge.style.display = "inline-flex";
+        } else {
+          badge.style.display = "none";
+        }
+      }
+
+      if (parkingNotes.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center; padding:32px 16px; color:var(--text-muted);">
+            <div style="font-weight:600; color:var(--amber); margin-bottom:4px;">Sổ ý tưởng đang trống</div>
+            <div style="font-size:11px;">Ghi nhanh các ý tưởng hoặc dự định nảy ra trong lúc học vào ô trên để giữ trọn mạch tập trung.</div>
+          </div>
+        `;
+        return;
+      }
+
+      parkingNotes.forEach((note, idx) => {
+        const row = document.createElement("div");
+        row.className = `parking-row-item ${note.resolved ? 'resolved' : ''}`;
+
+        const chk = document.createElement("div");
+        chk.className = `round-check-circle ${note.resolved ? 'checked' : ''}`;
+        chk.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>`;
+        chk.onclick = () => {
+          note.resolved = !note.resolved;
+          pyCall("toggle_parking_resolved", idx);
+          renderParkingList();
+        };
+
+        const tag = document.createElement("span");
+        tag.className = `tag-badge ${note.type === 'detected' ? 'tag-blocked' : 'tag-manual'}`;
+        tag.innerText = note.type === 'detected' ? 'Bị chặn' : 'Tự ghi';
+
+        const time = document.createElement("span");
+        time.className = "parking-timestamp";
+        time.innerText = note.time || "--:--";
+
+        const text = document.createElement("span");
+        text.className = "parking-text";
+        text.innerText = note.text;
+
+        const trash = document.createElement("button");
+        trash.className = "btn-trash-parking";
+        trash.title = "Xóa";
+        trash.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+        trash.onclick = () => {
+          parkingNotes.splice(idx, 1);
+          pyCall("delete_parking_note", idx);
+          renderParkingList();
+        };
+
+        row.appendChild(chk);
+        row.appendChild(tag);
+        row.appendChild(time);
+        row.appendChild(text);
+        row.appendChild(trash);
+        container.appendChild(row);
+      });
+    }
+
+    window.updateParking = window.updateParkingLot = function(notes) {
+      if (notes && Array.isArray(notes)) {
+        parkingNotes = notes;
+        renderParkingList();
+      }
+    };
+
+    // =========================================================================
+    // THỐNG KÊ & CHI TIẾT WEB/APP (Tab 3 Analytics)
+    // =========================================================================
+    function loadAnalyticsTab() {
+      pyCall("get_purity_report").then(data => {
+        renderAnalyticsContent(data);
+      });
+      pyCall("get_daily_history").then(hist => {
+        if (hist) renderWeeklyHistory(hist);
+      });
+    }
+
+    function renderAnalyticsContent(data) {
+      if (!data) return;
+      cachedPurityData = data;
+
+      document.getElementById("statDeepTime").innerText = data.deep_work_str || "0s";
+      document.getElementById("statOnlineTime").innerText = data.online_study_str || "0s";
+      document.getElementById("statDistractedTime").innerText = data.distracted_str || "0s";
+
+      const score = data.purity_percent !== undefined ? data.purity_percent : 100;
+      document.getElementById("statPurityBadge").innerText = `${score}% Tập trung`;
+
+      const total = Math.max(1, (data.deep_work_seconds || 0) + (data.online_study_seconds || 0) + (data.distracted_seconds || 0));
+      const deepPct = ((data.deep_work_seconds || 0) / total) * 100;
+      const onlinePct = ((data.online_study_seconds || 0) / total) * 100;
+      const distPct = ((data.distracted_seconds || 0) / total) * 100;
+
+      document.getElementById("progSegDeep").style.width = `${deepPct}%`;
+      document.getElementById("progSegOnline").style.width = `${onlinePct}%`;
+      document.getElementById("progSegDistracted").style.width = `${distPct}%`;
+
+      // Render App list
+      const listEl = document.getElementById("tab3AppBreakdownList");
+      if (!listEl) return;
+      listEl.innerHTML = "";
+
+      if (data.breakdown && data.breakdown.length > 0) {
+        data.breakdown.forEach(item => {
+          const row = document.createElement("div");
+          row.className = "app-breakdown-row";
+
+          const isStudy = (item.category === "deep_work" || item.category === "online_study");
+          const tagClass = item.category === "deep_work" ? "study" : (item.category === "online_study" ? "online_study" : "distraction");
+          const tagLabel = item.category === "deep_work" ? "🎓 Học sâu" : (item.category === "online_study" ? "🌐 Học online" : "⚠️ Xao nhãng");
+
+          row.innerHTML = `
+            <div class="app-info-line">
+              <span class="app-name">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg>
+                <strong>${item.name}</strong>
+                ${item.title ? `<span style="font-size:10px; color:var(--text-dim); max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">- ${item.title}</span>` : ''}
+              </span>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="app-duration-tag">${item.time_str} (${item.percent}%)</span>
+                <span class="tag-btn-reclassify ${tagClass}" onclick="toggleAppCategory('${item.key}', '${item.category}')" title="Bấm để đổi: Học bài <-> Xao nhãng">
+                  ${tagLabel} ⇄
+                </span>
+              </div>
+            </div>
+            <div class="app-bar-track">
+              <div class="app-bar-fill" style="width: ${item.percent}%; background: ${item.category === 'entertainment' ? 'var(--rose)' : (item.category === 'online_study' ? 'var(--cyan)' : 'var(--emerald)')};"></div>
+            </div>
+          `;
+          listEl.appendChild(row);
+        });
+      } else {
+        listEl.innerHTML = `
+          <div style="text-align:center; padding:18px; color:var(--text-dim); font-size:11px;">
+            Đang ghi nhận thời gian... Hãy bắt đầu học hoặc sử dụng các ứng dụng để theo dõi!
+          </div>
+        `;
+      }
+    }
+
+    function toggleAppCategory(key, currentCat) {
+      const newCat = (currentCat === "entertainment") ? "online_study" : "entertainment";
+      pyCall("reclassify_usage_item", key, newCat).then(() => {
+        loadAnalyticsTab();
+        showToast(`✓ Đã đổi phân loại cho ${key}`);
+      });
+    }
+
+    // =========================================================================
+    // TIMER ENGINE & PROGRESS (Called every 1s from Python)
+    // =========================================================================
+    window.updateTimer = function(remaining, total, state, session, target, stats, mode) {
+      remainingSeconds = remaining;
+      totalTargetSeconds = total;
+      appState = state;
+      currentSession = session;
+      targetSessions = target;
+      if (mode) currentMode = mode;
+
+      const mins = Math.floor(remaining / 60).toString().padStart(2, "0");
+      const secs = (remaining % 60).toString().padStart(2, "0");
+      document.getElementById("clockDigits").innerText = `${mins}:${secs}`;
+
+      // Progress Arc Calculation
+      const arc = document.getElementById("dialProgressArc");
+      const circumference = 480; // 2 * PI * 76 ~= 480
+      const ratio = total > 0 ? (remaining / total) : 0;
+      const offset = circumference * (1 - ratio);
+      arc.style.strokeDashoffset = offset;
+
+      const badge = document.getElementById("dialPhaseBadge");
+      const label = document.getElementById("dialPhaseLabel");
+      const dot = document.getElementById("dialPhaseDot");
+      const sub = document.getElementById("dialSubInstruction");
+      const mainBtn = document.getElementById("btnMainAction");
+      const mainBtnText = document.getElementById("btnMainActionText");
+      const pauseBtn = document.getElementById("btnPauseAction");
+
+      if (mode) {
+        if (mode === "eyecare" || mode === "study") {
+          currentAppMode = mode;
+        } else {
+          currentMode = mode;
+        }
+      }
+
+      const isEyeCare = (currentAppMode === "eyecare");
+      const isMovie = (currentMode === "movie" && !isEyeCare);
+      const totalMin = Math.round(total / 60);
+
+      const cycleStr = isEyeCare ? `👁️ ${totalMin}' · Nghỉ mắt 50/10` : (isMovie ? `🎬 ${totalMin}' · Xem phim` : `${totalMin}' · Ca ${session}/${target === 0 ? '∞' : target}`);
+      document.getElementById("headerCycleInfo").innerText = cycleStr;
+
+      if (state === "FOCUS") {
+        if (isEyeCare) {
+          label.innerText = `👁️ Dùng máy tính · ${mins}:${secs}`;
+          arc.style.stroke = "url(#dialGradient)";
+          badge.style.color = "#38bdf8";
+          badge.style.background = "rgba(6, 182, 212, 0.12)";
+          badge.style.borderColor = "rgba(6, 182, 212, 0.3)";
+          dot.style.background = "#38bdf8";
+          sub.innerText = "Chu kỳ 50 phút • Phím Space để dừng";
+          mainBtnText.innerText = "Đang dùng máy tính";
+          mainBtn.className = "btn-hero-primary";
+        } else if (isMovie) {
+          label.innerText = `🍿 Ca Xem Phim · ${totalMin} phút`;
+          arc.style.stroke = "url(#movieGradient)";
+          badge.style.color = "#fbbf24";
+          badge.style.background = "rgba(245, 158, 11, 0.12)";
+          badge.style.borderColor = "rgba(245, 158, 11, 0.3)";
+          dot.style.background = "#fbbf24";
+          sub.innerText = "Hết giờ chuông sẽ nhắc bạn nghỉ ngơi";
+          mainBtnText.innerText = "Đang xem phim";
+          mainBtn.className = "btn-hero-primary movie-theme";
+        } else {
+          label.innerText = `Ca ${session} · Tập trung sâu`;
+          arc.style.stroke = "url(#dialGradient)";
+          badge.style.color = "var(--emerald-light)";
+          badge.style.background = "rgba(16, 185, 129, 0.09)";
+          badge.style.borderColor = "rgba(16, 185, 129, 0.25)";
+          dot.style.background = "var(--emerald)";
+          sub.innerText = "Phím Space để tạm dừng";
+          mainBtnText.innerText = "Đang tập trung";
+          mainBtn.className = "btn-hero-primary";
+        }
+
+        mainBtn.onclick = () => pyCall("toggle_pause");
+        if (pauseBtn) pauseBtn.disabled = false;
+        hideRestModal();
+
+      } else if (state === "BREAK") {
+        label.innerText = isEyeCare ? `🌿 Giờ nghỉ mắt 20-20-20` : `Giờ nghỉ ngơi & hồi phục`;
+        arc.style.stroke = "url(#breakGradient)";
+        badge.style.color = isEyeCare ? "var(--emerald-light)" : "var(--amber)";
+        badge.style.background = isEyeCare ? "rgba(16, 185, 129, 0.12)" : "rgba(245, 158, 11, 0.09)";
+        badge.style.borderColor = isEyeCare ? "rgba(16, 185, 129, 0.3)" : "rgba(245, 158, 11, 0.25)";
+        dot.style.background = isEyeCare ? "var(--emerald)" : "var(--amber)";
+        sub.innerText = "Rời mắt khỏi màn hình máy tính, nhìn xa 6 mét";
+
+        mainBtnText.innerText = isEyeCare ? "Xong nghỉ mắt, tiếp tục dùng máy" : "Vào ca tiếp theo";
+        mainBtn.className = "btn-hero-primary";
+        mainBtn.onclick = () => pyCall("start_next_session_early");
+        if (pauseBtn) pauseBtn.disabled = true;
+        showRestModal(remaining);
+
+      } else if (state === "PAUSED") {
+        label.innerText = `Đang tạm dừng`;
+        badge.style.color = "#f59e0b";
+        badge.style.background = "rgba(245, 158, 11, 0.09)";
+        badge.style.borderColor = "rgba(245, 158, 11, 0.25)";
+        dot.style.background = "#f59e0b";
+        sub.innerText = "Phím Space để tiếp tục";
+
+        mainBtnText.innerText = isEyeCare ? "Tiếp tục dùng máy" : (isMovie ? "Tiếp tục xem phim" : "Tiếp tục ca học");
+        mainBtn.className = "btn-hero-primary paused";
+        mainBtn.onclick = () => pyCall("start_timer");
+        if (pauseBtn) pauseBtn.disabled = false;
+
+      } else { // IDLE
+        label.innerText = isEyeCare ? `Chu kỳ 50/10 Sẵn sàng` : (isMovie ? `Sẵn sàng xem phim` : `Sẵn sàng học`);
+        arc.style.stroke = isEyeCare ? "url(#dialGradient)" : (isMovie ? "url(#movieGradient)" : "url(#dialGradient)");
+        badge.style.color = isEyeCare ? "#38bdf8" : (isMovie ? "#fbbf24" : "var(--text-secondary)");
+        badge.style.background = "var(--bg-subtle)";
+        badge.style.borderColor = "var(--border)";
+        dot.style.background = isEyeCare ? "#38bdf8" : (isMovie ? "#fbbf24" : "var(--emerald)");
+        sub.innerText = "Phím Space để bắt đầu";
+
+        mainBtnText.innerText = isEyeCare ? "Bắt đầu chu kỳ 50/10" : (isMovie ? "Bắt đầu xem phim" : "Bắt đầu ca học");
+        mainBtn.className = isMovie ? "btn-hero-primary movie-theme" : "btn-hero-primary";
+        mainBtn.onclick = () => pyCall("start_timer");
+        if (pauseBtn) pauseBtn.disabled = true;
+        hideRestModal();
+      }
+
+      // Sync Mini HUD Widget (Floating Time Pill)
+      const miniDigits = document.getElementById("miniTimerDigits");
+      if (miniDigits) {
+        miniDigits.innerText = `${mins}:${secs}`;
+        const miniDot = document.getElementById("miniStatusDot");
+        const miniText = document.getElementById("miniStatusText");
+        const miniFill = document.getElementById("miniProgressFill");
+        const miniPlayIcon = document.getElementById("miniPlayPauseIcon");
+
+        const pct = total > 0 ? Math.min(100, Math.max(0, (1 - ratio) * 100)) : 0;
+        if (miniFill) miniFill.style.width = `${pct}%`;
+
+        if (state === "FOCUS") {
+          if (isEyeCare) {
+            if (miniDot) miniDot.style.background = "#38bdf8";
+            if (miniText) miniText.innerText = `👁️ Dùng máy · ${mins}:${secs}`;
+            if (miniFill) miniFill.style.background = "linear-gradient(90deg, #06b6d4, #38bdf8)";
+          } else if (isMovie) {
+            if (miniDot) miniDot.style.background = "#fbbf24";
+            if (miniText) miniText.innerText = `🍿 Xem phim · Ca ${session}`;
+            if (miniFill) miniFill.style.background = "linear-gradient(90deg, #f59e0b, #fbbf24)";
+          } else {
+            if (miniDot) miniDot.style.background = "var(--emerald)";
+            if (miniText) miniText.innerText = `Tập trung · Ca ${session}`;
+            if (miniFill) miniFill.style.background = "linear-gradient(90deg, #10b981, #06b6d4)";
+          }
+          if (miniPlayIcon) {
+            miniPlayIcon.innerHTML = `<rect x="6" y="4" width="4" height="16" fill="currentColor"/><rect x="14" y="4" width="4" height="16" fill="currentColor"/>`;
+          }
+        } else if (state === "BREAK") {
+          if (miniDot) miniDot.style.background = isEyeCare ? "#10b981" : "var(--cyan)";
+          if (miniText) miniText.innerText = isEyeCare ? `🌿 Nghỉ mắt · ${mins}:${secs}` : `☕ Nghỉ ngơi · Ca ${session}`;
+          if (miniFill) miniFill.style.background = "linear-gradient(90deg, #10b981, #34d399)";
+          if (miniPlayIcon) {
+            miniPlayIcon.innerHTML = `<polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/>`;
+          }
+        } else if (state === "PAUSED") {
+          if (miniDot) miniDot.style.background = "#f59e0b";
+          if (miniText) miniText.innerText = `⏸ Tạm dừng · Ca ${session}`;
+          if (miniFill) miniFill.style.background = "#f59e0b";
+          if (miniPlayIcon) {
+            miniPlayIcon.innerHTML = `<polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/>`;
+          }
+        } else { // IDLE
+          if (miniDot) miniDot.style.background = isEyeCare ? "#38bdf8" : (isMovie ? "#fbbf24" : "var(--emerald)");
+          if (miniText) miniText.innerText = isEyeCare ? `👁️ Chu kỳ 50/10` : (isMovie ? `🎬 Sẵn sàng xem phim` : `Sẵn sàng · Ca ${session}`);
+          if (miniFill) {
+            miniFill.style.width = "100%";
+            miniFill.style.background = "rgba(255, 255, 255, 0.15)";
+          }
+          if (miniPlayIcon) {
+            miniPlayIcon.innerHTML = `<polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/>`;
+          }
+        }
+      }
+
+      if (stats) {
+        document.getElementById("footerStatsLabel").innerHTML = 
+          `Hôm nay: ${stats.completed || 0} ca (${stats.minutes || 0} phút) 📊 <span style="text-decoration:underline; color:#38bdf8;">[Xem chi tiết Web/App]</span>`;
+      }
+    };
+
+    // =========================================================================
+    // REST MODE & REFLECTION DIALOGS
+    // =========================================================================
+    function showRestModal(remaining) {
+      const modal = document.getElementById("restModalOverlay");
+      modal.classList.add("active");
+      const mins = Math.floor(remaining / 60).toString().padStart(2, "0");
+      const secs = (remaining % 60).toString().padStart(2, "0");
+      document.getElementById("restClockDigits").innerText = `${mins}:${secs}`;
+    }
+
+    function hideRestModal() {
+      const modal = document.getElementById("restModalOverlay");
+      modal.classList.remove("active");
+    }
+
+    window.showReflectionModal = function(sessionNum, purityData) {
+      cachedPurityData = purityData;
+      const modal = document.getElementById("reflectionModal");
+      modal.classList.add("active");
+      reflCountdownSec = 20;
+      document.getElementById("reflectionCountdown").innerText = `Tự động vào giờ nghỉ sau: ${reflCountdownSec}s`;
+      clearInterval(reflTimer);
+      reflTimer = setInterval(() => {
+        reflCountdownSec--;
+        document.getElementById("reflectionCountdown").innerText = `Tự động vào giờ nghỉ sau: ${reflCountdownSec}s`;
+        if (reflCountdownSec <= 0) {
+          clearInterval(reflTimer);
+          submitSessionReflection();
+        }
+      }, 1000);
+    };
+
+    function selectRating(rate) {
+      selectedRating = rate;
+      ["Smooth", "Trap", "Distracted"].forEach(r => {
+        document.getElementById(`rate${r}`).classList.remove("active");
+      });
+      if (rate === "smooth") document.getElementById("rateSmooth").classList.add("active");
+      if (rate === "trap") document.getElementById("rateTrap").classList.add("active");
+      if (rate === "distracted") document.getElementById("rateDistracted").classList.add("active");
+    }
+
+    function submitSessionReflection() {
+      clearInterval(reflTimer);
+      const modal = document.getElementById("reflectionModal");
+      modal.classList.remove("active");
+      const txt = document.getElementById("reflectionTrapText").value.trim();
+      pyCall("submit_reflection", selectedRating, txt);
+      document.getElementById("reflectionTrapText").value = "";
+    }
+
+    // =========================================================================
+    // EYE CARE 50/10 FINISHED MODAL
+    // =========================================================================
+    window.showEyeCareFinishedModal = function(purityData) {
+      const modal = document.getElementById("eyeCareFinishedModal");
+      if (modal) {
+        modal.classList.add("active");
+        const usedMins = Math.round(totalTargetSeconds / 60) || 50;
+        const titleEl = document.getElementById("eyeCareFinishedTitle");
+        if (titleEl) {
+          titleEl.innerText = `ĐÃ HẾT ${usedMins} PHÚT DÙNG MÁY TÍNH!`;
+        }
+      }
+    };
+
+    function startEyeCareBreak() {
+      const modal = document.getElementById("eyeCareFinishedModal");
+      if (modal) modal.classList.remove("active");
+      pyCall("enter_break_mode");
+    }
+
+    function extendEyeCareWork() {
+      const modal = document.getElementById("eyeCareFinishedModal");
+      if (modal) modal.classList.remove("active");
+      pyCall("extend_eyecare_work", 5);
+      showToast("⏳ Đã gia hạn thêm 5 phút dùng máy!");
+    }
+
+    // =========================================================================
+    // FRICTION BARRIER MODAL
+    // =========================================================================
+    window.showFrictionBarrier = function(distractedTitle) {
+      const modal = document.getElementById("frictionModal");
+      modal.classList.add("active");
+      const titleSpan = document.getElementById("frictionDetectedTitle");
+      if (titleSpan) {
+        titleSpan.innerText = distractedTitle ? `Phát hiện: ${distractedTitle}` : "Phát hiện: Trang web / Ứng dụng giải trí";
+      }
+      frictionCountSec = 3;
+      const btn = document.getElementById("btnFrictionAllow");
+      btn.innerText = `Chỉ mở giải trí chốc lát (${frictionCountSec}s)`;
+      btn.disabled = true;
+      btn.style.opacity = "0.5";
+      clearInterval(frictionTimer);
+      frictionTimer = setInterval(() => {
+        frictionCountSec--;
+        if (frictionCountSec <= 0) {
+          clearInterval(frictionTimer);
+          btn.innerText = "Chỉ mở giải trí chốc lát";
+          btn.disabled = false;
+          btn.style.opacity = "1";
+        } else {
+          btn.innerText = `Chỉ mở giải trí chốc lát (${frictionCountSec}s)`;
+        }
+      }, 1000);
+    };
+
+    window.hideFrictionBarrier = function() {
+      const modal = document.getElementById("frictionModal");
+      modal.classList.remove("active");
+      clearInterval(frictionTimer);
+    };
+
+    // =========================================================================
+    // SETTINGS ACTIONS
+    // =========================================================================
+    function applyPreset(focusMin, breakMin, silent = false) {
+      document.querySelectorAll("#btnPreset5010, #btnPreset2505, #btnPreset9020").forEach(b => b.classList.remove("active"));
+      if (focusMin === 50) document.getElementById("btnPreset5010").classList.add("active");
+      if (focusMin === 25) document.getElementById("btnPreset2505").classList.add("active");
+      if (focusMin === 90) document.getElementById("btnPreset9020").classList.add("active");
+      pyCall("apply_preset", focusMin, breakMin);
+      if (!silent) showToast(`✓ Đã đặt chu kỳ ${focusMin}/${breakMin}'`);
+    }
+
+    function setTargetSessions(target, silent = false) {
+      document.querySelectorAll("#btnTarget2, #btnTarget3, #btnTarget4, #btnTarget0").forEach(b => b.classList.remove("active"));
+      if (target === 2) document.getElementById("btnTarget2").classList.add("active");
+      if (target === 3) document.getElementById("btnTarget3").classList.add("active");
+      if (target === 4) document.getElementById("btnTarget4").classList.add("active");
+      if (target === 0) document.getElementById("btnTarget0").classList.add("active");
+      pyCall("set_target_sessions", target);
+      if (!silent) showToast(`✓ Đã đặt mục tiêu ${target === 0 ? 'Vô hạn' : target + ' ca'}`);
+    }
+
+    function setEnforcement(mode, silent = false) {
+      pyCall("set_enforcement_mode", mode);
+      document.getElementById("enf_overlay").checked = (mode === "overlay");
+      document.getElementById("enf_turnoff").checked = (mode === "turnoff");
+      document.getElementById("enf_lock").checked = (mode === "lock");
+      if (!silent) showToast("✓ Đã cập nhật cơ chế kỷ luật");
+    }
+
+    function toggleSetting(key) {
+      const toggle = document.getElementById(`toggle-${key}`);
+      const isCurrentlyOn = toggle.classList.contains("on");
+      const newState = !isCurrentlyOn;
+      if (newState) toggle.classList.add("on");
+      else toggle.classList.remove("on");
+      pyCall("toggle_feature_config", key, newState);
+      showToast("✓ Đã lưu cài đặt");
+    }
+
+    // =========================================================================
+    // TOAST SYSTEM
+    // =========================================================================
+    window.showToast = function(msg) {
+      const container = document.getElementById("toastContainer");
+      if (!container) return;
+      container.innerHTML = ""; // Dismiss previous toasts to avoid stacking
+      const toast = document.createElement("div");
+      toast.className = "toast-pill";
+      toast.innerText = msg;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.transition = "opacity 0.25s, transform 0.25s";
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(6px)";
+        setTimeout(() => toast.remove(), 260);
+      }, 2200);
+    };
+
+    // =========================================================================
+    // AUDIO VOLUME & WEEKLY PRODUCTIVITY HISTORY
+    // =========================================================================
+    let currentAppConfig = null;
+
+    function updateSoundVolume(val) {
+      const lbl = document.getElementById("soundVolLabel");
+      if (lbl) lbl.innerText = `${val}%`;
+      pyCall("set_sound_volume", val);
+    }
+
+    function testSoundAlert() {
+      pyCall("test_sound");
+      showToast("🔊 Đang phát thử chuông thông báo...");
+    }
+
+    function renderWeeklyHistory(history) {
+      const container = document.getElementById("weeklyBarsContainer");
+      if (!container) return;
+      container.innerHTML = "";
+
+      const historyData = history || {};
+      const dayNames = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+      const now = new Date();
+      let totalWeekMins = 0;
+
+      // 7 days ending today
+      const days = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(now.getDate() - i);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const dateDay = String(d.getDate()).padStart(2, "0");
+        const key = `${y}-${m}-${dateDay}`;
+        const dayLabel = dayNames[d.getDay()];
+        const entry = historyData[key] || { sessions: 0, minutes: 0 };
+        totalWeekMins += (entry.minutes || 0);
+        days.push({
+          key,
+          dayLabel,
+          minutes: entry.minutes || 0,
+          sessions: entry.sessions || 0,
+          isToday: (i === 0)
+        });
+      }
+
+      const maxMin = Math.max(1, ...days.map(d => d.minutes));
+
+      days.forEach(d => {
+        const col = document.createElement("div");
+        col.className = "weekly-bar-col";
+        col.title = `${d.key} (${d.dayLabel}): ${d.minutes} phút • ${d.sessions} ca học`;
+
+        const heightPct = d.minutes > 0 ? Math.max(12, Math.round((d.minutes / maxMin) * 85)) : 6;
+
+        const pill = document.createElement("div");
+        pill.className = `weekly-bar-pill ${d.isToday ? 'today' : ''}`;
+        pill.style.height = `${heightPct}%`;
+
+        const label = document.createElement("div");
+        label.className = `weekly-bar-day ${d.isToday ? 'today' : ''}`;
+        label.innerText = d.dayLabel;
+
+        col.appendChild(pill);
+        col.appendChild(label);
+        container.appendChild(col);
+      });
+
+      const totalH = Math.floor(totalWeekMins / 60);
+      const totalM = totalWeekMins % 60;
+      const totalLbl = document.getElementById("weeklyTotalMinutesLabel");
+      if (totalLbl) {
+        totalLbl.innerText = totalH > 0 ? `${totalH} giờ ${totalM} phút` : `${totalM} phút`;
+      }
+    }
+
+    // =========================================================================
+    // INITIAL BOOTSTRAP FROM PYTHON
+    // =========================================================================
+    window.initAppState = function(config, stats, initialTasks, initialParking) {
+      if (initialTasks && Array.isArray(initialTasks) && initialTasks.length > 0) {
+        tasks = initialTasks;
+      } else {
+        tasks = []; // Start 100% clean
+      }
+      if (initialParking && Array.isArray(initialParking) && initialParking.length > 0) {
+        parkingNotes = initialParking;
+      }
+      renderTasksList();
+      renderParkingList();
+
+      if (config) {
+        currentAppConfig = config;
+        targetSessions = config.target_sessions !== undefined ? config.target_sessions : 3;
+        const focusMin = config.focus_minutes || 50;
+        const breakMin = config.break_minutes || 10;
+        applyPreset(focusMin, breakMin, true);
+        setTargetSessions(targetSessions, true);
+
+        if (config.sound_volume !== undefined) {
+          const vol = parseInt(config.sound_volume);
+          const range = document.getElementById("soundVolRange");
+          const lbl = document.getElementById("soundVolLabel");
+          if (range) range.value = vol;
+          if (lbl) lbl.innerText = `${vol}%`;
+        }
+
+        if (config.daily_history) {
+          renderWeeklyHistory(config.daily_history);
+        }
+
+        if (config.enforcement_mode) {
+          setEnforcement(config.enforcement_mode, true);
+        }
+        ["friction_barrier_enabled", "eye_care_enabled", "halfway_nudge_enabled", "wrapup_nudge_enabled"].forEach(key => {
+          if (config[key] !== undefined) {
+            const toggle = document.getElementById(`toggle-${key}`);
+            if (toggle) {
+              if (config[key]) toggle.classList.add("on");
+              else toggle.classList.remove("on");
+            }
+          }
+        });
+      }
+    };
+
+    // Initial render on boot
+    renderTasksList();
+    renderParkingList();
+  </script>
+</body>
+</html>
