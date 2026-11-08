@@ -99,13 +99,16 @@ class DistractionMonitor:
         # key -> {"name": str, "category": "deep_work"|"online_study"|"entertainment", "seconds": int, "manual": str|None}
         self.usage_records = {}
         self.distraction_events = [] # list of {"app": str, "title": str, "time": str, "duration": int}
-        
         self.allowed_hwnds = set()
         self.last_distraction_time = 0
         self.in_distraction = False
         self._thread = None
         self.current_distracted_hwnd = None
         self.total_tracked_seconds = 0
+        self.last_save_time = time.time()
+
+        # Load persisted daily stats for today if available
+        self._load_today_persisted_stats()
 
     def start_monitoring(self):
         if self.is_monitoring:
@@ -117,13 +120,42 @@ class DistractionMonitor:
 
     def stop_monitoring(self):
         self.is_monitoring = False
+        self.save_daily_stats()
 
     def reset_stats(self):
-        self.usage_records = {}
-        self.distraction_events = []
+        # Do not wipe historical daily usage on timer adjustment!
         self.in_distraction = False
-        self.total_tracked_seconds = 0
         self.allowed_hwnds.clear()
+
+    def _load_today_persisted_stats(self):
+        """Loads today's accumulated tracking records from config.json so they survive app restarts."""
+        try:
+            from config_manager import load_config
+            cfg = load_config()
+            today_key = time.strftime("%Y-%m-%d")
+            daily_usage = cfg.get("daily_usage", {}).get(today_key, {})
+            if daily_usage and "records" in daily_usage:
+                self.usage_records = daily_usage.get("records", {})
+                self.total_tracked_seconds = daily_usage.get("total_seconds", sum(r.get("seconds", 0) for r in self.usage_records.values()))
+                self.distraction_events = daily_usage.get("events", [])
+        except Exception:
+            pass
+
+    def save_daily_stats(self):
+        """Flushes today's accumulated web/app tracking records to config.json."""
+        try:
+            from config_manager import load_config, save_config
+            today_key = time.strftime("%Y-%m-%d")
+            cfg = load_config()
+            daily_usage = cfg.setdefault("daily_usage", {})
+            daily_usage[today_key] = {
+                "records": self.usage_records,
+                "total_seconds": self.total_tracked_seconds,
+                "events": self.distraction_events[-30:]
+            }
+            save_config(cfg)
+        except Exception:
+            pass
 
     def set_youtube_fb_study_mode(self, enabled: bool):
         """Allows YouTube / Facebook to be counted as online study tools."""
@@ -138,6 +170,9 @@ class DistractionMonitor:
     def _worker_loop(self):
         while self.is_monitoring:
             self._process_active_window()
+            if time.time() - self.last_save_time > 15:
+                self.last_save_time = time.time()
+                self.save_daily_stats()
             time.sleep(1)
 
     def _classify_window(self, raw_title: str, proc_name: str):
@@ -298,6 +333,47 @@ class DistractionMonitor:
                 "percent": pct,
                 "title": data.get("last_title", "")
             })
+
+        # Check today's logged focus time from daily_history if records are empty
+        today_key = time.strftime("%Y-%m-%d")
+        today_logged_sec = 0
+        try:
+            from config_manager import load_config
+            cfg = load_config()
+            today_entry = cfg.get("daily_history", {}).get(today_key, {})
+            today_logged_mins = today_entry.get("minutes", 0)
+            if today_logged_mins > 0:
+                today_logged_sec = today_logged_mins * 60
+        except Exception:
+            pass
+
+        # If zero seconds were captured by foreground hook but sessions were finished today:
+        if (deep_work_sec + online_study_sec) < today_logged_sec:
+            diff = today_logged_sec - (deep_work_sec + online_study_sec)
+            deep_work_sec += diff
+            actual_tracked += diff
+            # Add or update default study entry in breakdown
+            found_study = False
+            for b in breakdown:
+                if b["category"] == "deep_work":
+                    b["seconds"] += diff
+                    m = b["seconds"] // 60
+                    s = b["seconds"] % 60
+                    b["time_str"] = f"{m}p {s}s" if m > 0 else f"{s}s"
+                    found_study = True
+                    break
+            if not found_study:
+                m = deep_work_sec // 60
+                s = deep_work_sec % 60
+                breakdown.insert(0, {
+                    "key": "focus_flow_study",
+                    "name": "Focus Flow • Học Tập Sâu",
+                    "category": "deep_work",
+                    "seconds": deep_work_sec,
+                    "time_str": f"{m}p {s}s" if m > 0 else f"{s}s",
+                    "percent": 100,
+                    "title": "Thời gian các ca học đã hoàn thành"
+                })
 
         productive_sec = deep_work_sec + online_study_sec
         total_recorded = deep_work_sec + online_study_sec + entertainment_sec

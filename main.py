@@ -382,7 +382,6 @@ class PomodoroApp:
             self.distraction_monitor.barrier_enabled = False
         else:
             self.distraction_monitor.barrier_enabled = self.config.get("friction_barrier_enabled", True)
-        self.distraction_monitor.reset_stats()
         self.sync_timer_to_js()
 
     def sync_tasks_to_js(self):
@@ -543,7 +542,11 @@ class PomodoroApp:
         if not self.is_fullscreen_overlay and self.window:
             try:
                 self.is_fullscreen_overlay = True
-                self.window.toggle_fullscreen()
+                native_form = getattr(self.window, 'native', None)
+                if native_form and not getattr(native_form, 'is_fullscreen', False):
+                    self.window.toggle_fullscreen()
+                elif not native_form:
+                    self.window.toggle_fullscreen()
                 self.window.on_top = True
             except Exception:
                 pass
@@ -554,15 +557,20 @@ class PomodoroApp:
         elif self.enforcement_mode == "lock":
             lock_workstation()
 
-        # Start active Break Watchdog Thread to prevent Alt+Tab and enforce 100% strict discipline
+        # Start active Break Watchdog Thread to prevent Alt+Tab, snapping, and enforce 100% strict discipline
         self._start_break_watchdog()
 
     def _start_break_watchdog(self):
-        """Active Win32 Watchdog: Keeps the break overlay topmost and snaps back if user tries to switch windows."""
+        """Active Win32 Watchdog: Keeps the break overlay topmost and snaps back if dragged or user tries to switch windows."""
         def _watchdog_loop():
             last_screen_off_time = time.time()
+            screen_w = user32.GetSystemMetrics(0) # SM_CXSCREEN
+            screen_h = user32.GetSystemMetrics(1) # SM_CYSCREEN
+            HWND_TOPMOST = -1
+            SWP_SHOWWINDOW = 0x0040
+
             while self.is_running and self.state == STATE_BREAK:
-                time.sleep(0.4)
+                time.sleep(0.3)
                 if not self.is_running or self.state != STATE_BREAK:
                     break
 
@@ -571,13 +579,19 @@ class PomodoroApp:
                     if native_form and hasattr(native_form, 'Handle'):
                         w_hwnd = native_form.Handle.ToInt32()
                         if w_hwnd:
+                            # 1. Enforce window bounds to cover full screen (prevents dragging out of fullscreen)
+                            from ctypes import wintypes
+                            rect = wintypes.RECT()
+                            user32.GetWindowRect(w_hwnd, ctypes.byref(rect))
+                            cur_w = rect.right - rect.left
+                            cur_h = rect.bottom - rect.top
+                            if cur_w < screen_w or cur_h < screen_h or rect.left != 0 or rect.top != 0:
+                                user32.SetWindowPos(w_hwnd, HWND_TOPMOST, 0, 0, screen_w, screen_h, SWP_SHOWWINDOW)
+
+                            # 2. Enforce foreground topmost
                             fg = user32.GetForegroundWindow()
                             if fg != w_hwnd:
-                                HWND_TOPMOST = -1
-                                SWP_NOMOVE = 0x0002
-                                SWP_NOSIZE = 0x0001
-                                SWP_SHOWWINDOW = 0x0040
-                                user32.SetWindowPos(w_hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW)
+                                user32.SetWindowPos(w_hwnd, HWND_TOPMOST, 0, 0, screen_w, screen_h, SWP_SHOWWINDOW)
                                 user32.BringWindowToTop(w_hwnd)
                                 user32.SetForegroundWindow(w_hwnd)
                 except Exception:
@@ -594,11 +608,15 @@ class PomodoroApp:
     def _on_break_finished(self):
         play_focus_sound()
         
-        # Exit fullscreen overlay if active
+        # Exit fullscreen overlay cleanly
         if self.is_fullscreen_overlay and self.window:
             try:
                 self.is_fullscreen_overlay = False
-                self.window.toggle_fullscreen()
+                native_form = getattr(self.window, 'native', None)
+                if native_form and getattr(native_form, 'is_fullscreen', False):
+                    self.window.toggle_fullscreen()
+                elif not native_form:
+                    self.window.toggle_fullscreen()
                 self.window.on_top = False
                 self.window.resize(520, 720)
             except Exception:
@@ -837,6 +855,15 @@ class Api:
         self._app.total_target_seconds = int(minutes) * 60
         self._app.sync_timer_to_js()
         return "ok"
+
+    def add_break_time(self, minutes=5):
+        """Adds extra minutes to the current break."""
+        if self._app.state == STATE_BREAK:
+            self._app.remaining_seconds += int(minutes) * 60
+            self._app.total_target_seconds += int(minutes) * 60
+            self._app.sync_timer_to_js()
+            return "ok"
+        return "not_in_break"
 
     def friction_back_to_study(self):
         if self._app.current_distracted_hwnd:

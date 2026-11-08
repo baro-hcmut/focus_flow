@@ -873,8 +873,10 @@
     }
 
     .weekly-history-card {
-      background: rgba(255, 255, 255, 0.025);
-      border: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.78) !important;
+      backdrop-filter: blur(12px) !important;
+      -webkit-backdrop-filter: blur(12px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
       border-radius: 9px;
       padding: 10px 12px;
       margin-bottom: 8px;
@@ -931,8 +933,10 @@
     }
 
     .stat-metric-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.78) !important;
+      backdrop-filter: blur(12px) !important;
+      -webkit-backdrop-filter: blur(12px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
       border-radius: 9px;
       padding: 9px 10px;
       display: flex;
@@ -2415,8 +2419,10 @@
       display: flex;
       flex-direction: column;
       gap: 3px;
-      background: var(--bg-subtle);
-      border: 1px solid var(--border-subtle);
+      background: rgba(15, 23, 42, 0.72) !important;
+      backdrop-filter: blur(10px) !important;
+      -webkit-backdrop-filter: blur(10px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
       border-radius: 6px;
       padding: 7px 10px;
     }
@@ -2543,11 +2549,18 @@
     }
 
     /* Rest Mode Modal */
+    body.in-break-lockout {
+      -webkit-app-region: no-drag !important;
+      user-select: none !important;
+      -webkit-user-select: none !important;
+    }
+
     .rest-modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(5, 7, 10, 0.96);
-      backdrop-filter: blur(25px);
+      background: radial-gradient(circle at 50% 38%, rgba(15, 23, 42, 0.95) 0%, rgba(3, 7, 18, 0.98) 100%);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
       z-index: 900;
       display: none;
       flex-direction: column;
@@ -2555,64 +2568,276 @@
       justify-content: center;
       padding: 24px;
       text-align: center;
+      -webkit-app-region: no-drag !important;
+      user-select: none !important;
+      -webkit-user-select: none !important;
+      touch-action: none;
+    }
+
+    .rest-modal-overlay * {
+      -webkit-app-region: no-drag !important;
     }
 
     .rest-modal-overlay.active {
       display: flex;
     }
 
-    .breathing-pulse-ring {
-      width: 130px;
-      height: 130px;
-      border-radius: 50%;
-      border: 2px solid var(--amber);
+    .rest-modal-overlay.mode-eyecare {
+      background: radial-gradient(circle at 50% 36%, rgba(6, 78, 59, 0.42) 0%, rgba(2, 20, 15, 0.98) 100%);
+    }
+
+    .rest-modal-overlay.mode-study {
+      background: radial-gradient(circle at 50% 36%, rgba(120, 53, 15, 0.38) 0%, rgba(15, 23, 42, 0.98) 100%);
+    }
+
+    .rest-mode-badge {
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      margin-bottom: 12px;
       display: flex;
       align-items: center;
+      gap: 6px;
+      padding: 6px 18px;
+      border-radius: 999px;
+      transition: all 0.3s ease;
+    }
+
+    .rest-centerpiece-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       justify-content: center;
-      margin-bottom: 16px;
-      animation: breathe 8s infinite ease-in-out;
-      box-shadow: 0 0 30px var(--amber-glow);
+      margin-bottom: 10px;
+      min-height: 90px;
     }
 
-    @keyframes breathe {
-      0%, 100% { transform: scale(1); opacity: 0.6; }
-      50% { transform: scale(1.15); opacity: 1; }
-    }
-
-    .rest-countdown-clock {
-      font-family: var(--mono);
-      font-size: 42px;
-      font-weight: 700;
-      color: #fff;
-      text-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
-    }
-
-    .emergency-unlock-box {
-      margin-top: 14px;
+    .infinity-track-box {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 6px;
     }
 
+    .infinity-track-box svg {
+      filter: drop-shadow(0 0 14px rgba(16, 185, 129, 0.35));
+    }
+
+    .centerpiece-hint {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+      color: #94a3b8;
+    }
+
+    .breathing-pulse-ring {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 2px solid var(--amber);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: breathe 8s infinite ease-in-out;
+      box-shadow: 0 0 30px var(--amber-glow);
+      padding: 8px;
+    }
+
+    .breathing-phase-guide {
+      font-size: 12px;
+      font-weight: 700;
+      color: #fbbf24;
+      text-align: center;
+      line-height: 1.35;
+    }
+
+    @keyframes breathe {
+      0%, 100% { transform: scale(0.95); opacity: 0.7; }
+      50% { transform: scale(1.12); opacity: 1; }
+    }
+
+    .rest-clock-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .rest-countdown-clock {
+      font-family: var(--mono);
+      font-size: 44px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      line-height: 1;
+      color: #fff;
+      text-shadow: 0 0 25px rgba(255, 255, 255, 0.4);
+    }
+
+    .rest-countdown-clock.emerald {
+      color: #34d399;
+      text-shadow: 0 0 30px rgba(52, 211, 153, 0.5);
+    }
+
+    .rest-countdown-clock.amber {
+      color: #fbbf24;
+      text-shadow: 0 0 30px rgba(251, 191, 36, 0.5);
+    }
+
+    .rest-clock-sub {
+      font-size: 10px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 4px;
+    }
+
+    .rest-title-text {
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 4px;
+      letter-spacing: 0.2px;
+    }
+
+    .rest-subtitle-tip {
+      font-size: 12px;
+      color: #cbd5e1;
+      max-width: 460px;
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+
+    .rest-guidance-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      width: 100%;
+      max-width: 440px;
+      margin-bottom: 14px;
+      text-align: left;
+    }
+
+    .rest-guide-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 9px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.2s ease;
+    }
+
+    .rest-guide-card:hover {
+      background: rgba(255, 255, 255, 0.07);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .rest-guide-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .rest-guide-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+
+    .rest-guide-desc {
+      font-size: 10.5px;
+      color: #94a3b8;
+      line-height: 1.4;
+    }
+
+    .rest-actions-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-rest-action {
+      height: 33px;
+      padding: 0 16px;
+      border-radius: 8px;
+      font-size: 11.5px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+      user-select: none;
+    }
+
+    .btn-rest-action.emerald {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: #34d399;
+    }
+
+    .btn-rest-action.emerald:hover {
+      background: rgba(16, 185, 129, 0.28);
+      border-color: #34d399;
+      color: #fff;
+    }
+
+    .btn-rest-action.amber {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: rgba(245, 158, 11, 0.4);
+      color: #fbbf24;
+    }
+
+    .btn-rest-action.amber:hover {
+      background: rgba(245, 158, 11, 0.28);
+      border-color: #fbbf24;
+      color: #fff;
+    }
+
+    .btn-rest-action.ghost {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.15);
+      color: #cbd5e1;
+    }
+
+    .btn-rest-action.ghost:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    .emergency-unlock-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      touch-action: none;
+    }
+
     .btn-emergency-unlock {
       position: relative;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.12);
       color: #94a3b8;
       font-size: 11.5px;
       font-weight: 600;
-      padding: 9px 20px;
+      padding: 8px 20px;
       border-radius: 8px;
       cursor: pointer;
       user-select: none;
       -webkit-user-select: none;
       overflow: hidden;
       transition: all 0.2s ease;
+      touch-action: none;
+      outline: none;
     }
 
     .btn-emergency-unlock:hover {
-      background: rgba(255, 255, 255, 0.09);
+      background: rgba(255, 255, 255, 0.08);
       color: #fff;
       border-color: rgba(239, 68, 68, 0.5);
     }
@@ -2623,8 +2848,9 @@
       left: 0;
       bottom: 0;
       width: 0%;
-      background: linear-gradient(90deg, rgba(239, 68, 68, 0.65), rgba(245, 158, 11, 0.85));
-      transition: width 0.05s linear;
+      background: linear-gradient(90deg, rgba(239, 68, 68, 0.75), rgba(245, 158, 11, 0.95));
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+      transition: width 0.04s linear;
       z-index: 1;
       pointer-events: none;
     }
@@ -5774,58 +6000,40 @@ body[data-fx="pixel"] .ambient-pill.active {
     </div>
   </div>
 
-  <!-- REST MODE MODAL (Hardcore Fullscreen Lockout) -->
-  <div class="rest-modal-overlay" id="restModalOverlay">
-    <div style="font-size:11.5px; font-weight:700; color:#fbbf24; letter-spacing:1px; margin-bottom:14px; display:flex; align-items:center; gap:6px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3); padding:5px 16px; border-radius:20px;">
-      <span>KHÔNG GIAN KỶ LUẬT THÉP • GIỜ NGHỈ BẮT BUỘC</span>
-    </div>
+  <!-- REST MODE MODAL (Full Screen Sanctuary & Disciplined Break) -->
+  <div class="rest-modal-overlay" id="restModalOverlay" onmousedown="handleModalBackgroundClick(event)">
+    <!-- Dynamic Mode Badge -->
+    <div class="rest-mode-badge" id="restModeBadge"></div>
 
-    <div class="breathing-pulse-ring">
+    <!-- Centerpiece Exercise / Ring -->
+    <div class="rest-centerpiece-wrapper" id="restCenterpieceWrapper"></div>
+
+    <!-- Rest Countdown Digits -->
+    <div class="rest-clock-container">
       <div class="rest-countdown-clock" id="restClockDigits">10:00</div>
+      <div class="rest-clock-sub" id="restClockSub">thời gian nghỉ còn lại</div>
     </div>
     
-    <div style="font-size:22px; font-weight:700; color:#fff; margin-bottom:6px;" id="restTitleText">GIỜ NGHỈ NGƠI & HỒI PHỤC</div>
-    <div style="font-size:12.5px; color:#cbd5e1; max-width:440px; margin-bottom:20px; line-height:1.6;" id="restHealthTip">
-      Quy tắc 20-20-20: Rời mắt khỏi màn hình máy tính, nhìn vào điểm xa 6 mét trong ít nhất 20 giây để phục hồi giác mạc.
-    </div>
+    <!-- Title & Scientific Rationale -->
+    <div class="rest-title-text" id="restTitleText">GIỜ NGHỈ NGƠI & PHỤC HỒI</div>
+    <div class="rest-subtitle-tip" id="restSubtitleTip"></div>
 
-    <!-- 3 Bài tập nghỉ ngơi trực quan -->
-    <div style="display:flex; flex-direction:column; gap:8px; width:100%; max-width:380px; margin-bottom:20px; text-align:left;">
-      <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 14px; display:flex; align-items:center; gap:12px;">
-        <div style="color:#38bdf8; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M3 12h3m12 0h3M12 3v3m0 12v3"/><circle cx="12" cy="12" r="9"/></svg></div>
-        <div>
-          <div style="font-size:12px; font-weight:600; color:#e2e8f0;">Nhìn xa 6 mét ngoài cửa sổ</div>
-          <div style="font-size:11px; color:#94a3b8;">Thả lỏng cơ thể mi và các cơ quan điều tiết thị giác</div>
-        </div>
-      </div>
-      <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 14px; display:flex; align-items:center; gap:12px;">
-        <div style="color:#38bdf8; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
-        <div>
-          <div style="font-size:12px; font-weight:600; color:#e2e8f0;">Uống 1 cốc nước ấm & chớp mắt</div>
-          <div style="font-size:11px; color:#94a3b8;">Cấp ẩm tức thì cho màng nước mắt và thanh lọc cơ thể</div>
-        </div>
-      </div>
-      <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 14px; display:flex; align-items:center; gap:12px;">
-        <div style="color:#38bdf8; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></div>
-        <div>
-          <div style="font-size:12px; font-weight:600; color:#e2e8f0;">Đứng dậy vươn vai & Đi lại nhẹ</div>
-          <div style="font-size:11px; color:#94a3b8;">Rời ghế làm việc, xoay nhẹ khớp cổ vai gáy để lưu thông máu</div>
-        </div>
-      </div>
-    </div>
+    <!-- 3 Tailored Action Guidance Cards -->
+    <div class="rest-guidance-cards" id="restGuidanceCards"></div>
 
-    <!-- Thông báo tự động -->
-    <div style="font-size:11.5px; color:#94a3b8; margin-bottom:10px;">
-      Màn hình sẽ tự động mở lại ngay khi hết thời gian nghỉ ngơi.
-    </div>
+    <!-- Action Buttons Row -->
+    <div class="rest-actions-row" id="restActionsRow"></div>
 
-    <!-- Khóa ma sát khẩn cấp (Giữ 5s để mở khóa) -->
+    <!-- Emergency Friction Unlock Box (3.0s Pointer Captured) -->
     <div class="emergency-unlock-box">
-      <button class="btn-emergency-unlock" id="btnEmergencyUnlock" onmousedown="startEmergencyUnlock()" onmouseup="cancelEmergencyUnlock()" onmouseleave="cancelEmergencyUnlock()" ontouchstart="startEmergencyUnlock()" ontouchend="cancelEmergencyUnlock()">
+      <button class="btn-emergency-unlock" id="btnEmergencyUnlock"
+        onpointerdown="handleEmergencyPointerDown(event)"
+        onpointerup="handleEmergencyPointerUp(event)"
+        onpointercancel="handleEmergencyPointerUp(event)">
         <div class="unlock-progress-fill" id="unlockProgressFill"></div>
-        <span class="unlock-btn-text" id="unlockBtnText">Mở khóa khẩn cấp (Nhấn & giữ 5s)</span>
+        <span class="unlock-btn-text" id="unlockBtnText">Mở khóa khẩn cấp (Giữ 3s)</span>
       </button>
-      <span class="emergency-hint">Nhấn và giữ liên tục 5 giây nếu bạn có việc đột xuất cần dùng máy</span>
+      <span class="emergency-hint">Nhấn và giữ liên tục 3 giây nếu bạn có việc khẩn cấp cần thao tác ngay</span>
     </div>
   </div>
 
@@ -6968,9 +7176,43 @@ function copyPuritySummary() {
     // =========================================================================
     // REST MODE & REFLECTION DIALOGS
     // =========================================================================
+    // REST SANCTUARY & HARDCORE BREAK CONTROLLER
+    // =========================================================================
     let emergencyUnlockTimer = null;
     let emergencyStartTime = 0;
-    const EMERGENCY_HOLD_MS = 5000;
+    let emergencyPointerId = null;
+    const EMERGENCY_HOLD_MS = 3000;
+    let breathingPhaseTimer = null;
+    let breathingPhaseIndex = 0;
+
+    function handleModalBackgroundClick(e) {
+      if (e.target.tagName !== "BUTTON" && !e.target.closest("button")) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    }
+
+    function handleEmergencyPointerDown(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      emergencyPointerId = e.pointerId;
+      try {
+        e.target.setPointerCapture(e.pointerId);
+      } catch (err) {}
+      startEmergencyUnlock();
+    }
+
+    function handleEmergencyPointerUp(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (emergencyPointerId !== null) {
+        try {
+          e.target.releasePointerCapture(emergencyPointerId);
+        } catch (err) {}
+        emergencyPointerId = null;
+      }
+      cancelEmergencyUnlock();
+    }
 
     function startEmergencyUnlock() {
       emergencyStartTime = Date.now();
@@ -6983,16 +7225,16 @@ function copyPuritySummary() {
         const pct = Math.min(100, (elapsed / EMERGENCY_HOLD_MS) * 100);
         if (fill) fill.style.width = `${pct}%`;
         const remSec = Math.max(0, ((EMERGENCY_HOLD_MS - elapsed) / 1000)).toFixed(1);
-        if (text) text.innerText = `Đang mở khóa khẩn cấp (${remSec}s)...`;
+        if (text) text.innerText = `Đang mở khóa (${remSec}s)...`;
 
         if (elapsed >= EMERGENCY_HOLD_MS) {
           clearInterval(emergencyUnlockTimer);
           if (fill) fill.style.width = "0%";
-          if (text) text.innerText = "Mở khóa khẩn cấp (Nhấn & giữ 5s)";
+          if (text) text.innerText = "Mở khóa khẩn cấp (Giữ 3s)";
           showToast("Đã kích hoạt mở khóa khẩn cấp!");
           pyCall("start_next_session_early");
         }
-      }, 50);
+      }, 40);
     }
 
     function cancelEmergencyUnlock() {
@@ -7000,25 +7242,223 @@ function copyPuritySummary() {
       const fill = document.getElementById("unlockProgressFill");
       const text = document.getElementById("unlockBtnText");
       if (fill) fill.style.width = "0%";
-      if (text) text.innerText = "Mở khóa khẩn cấp (Nhấn & giữ 5s)";
+      if (text) text.innerText = "Mở khóa khẩn cấp (Giữ 3s)";
+    }
+
+    function addBreakMinutes(mins) {
+      pyCall("add_break_time", mins).then(() => {
+        showToast(`🌿 Đã cộng thêm ${mins} phút nghỉ ngơi thư giãn!`);
+      });
+    }
+
+    function earlyFinishBreak() {
+      pyCall("start_next_session_early");
     }
 
     function showRestModal(remaining) {
       const modal = document.getElementById("restModalOverlay");
+      if (!modal) return;
+      document.body.classList.add("in-break-lockout");
       modal.classList.add("active");
+
       const mins = Math.floor(remaining / 60).toString().padStart(2, "0");
       const secs = (remaining % 60).toString().padStart(2, "0");
-      document.getElementById("restClockDigits").innerText = `${mins}:${secs}`;
-      
+      const clockDigits = document.getElementById("restClockDigits");
+      if (clockDigits) clockDigits.innerText = `${mins}:${secs}`;
+
+      const isEyeCare = (currentAppMode === "eyecare");
+      modal.className = `rest-modal-overlay active ${isEyeCare ? 'mode-eyecare' : 'mode-study'}`;
+
+      if (clockDigits) {
+        clockDigits.className = `rest-countdown-clock ${isEyeCare ? 'emerald' : 'amber'}`;
+      }
+
+      // Populate Mode-Specific Badge, Centerpiece, Rationale & Guide Cards
+      const badgeEl = document.getElementById("restModeBadge");
+      const centerpieceEl = document.getElementById("restCenterpieceWrapper");
       const titleEl = document.getElementById("restTitleText");
-      if (titleEl) {
-        titleEl.innerText = (currentAppMode === "eyecare") ? "NGHỈ MẮT 50/10 • PHỤC HỒI THỊ LỰC" : "GIỜ NGHỈ NGƠI • NẠP NĂNG LƯỢNG";
+      const subEl = document.getElementById("restSubtitleTip");
+      const guidesEl = document.getElementById("restGuidanceCards");
+      const actionsEl = document.getElementById("restActionsRow");
+
+      if (isEyeCare) {
+        if (badgeEl) {
+          badgeEl.style.background = "rgba(16, 185, 129, 0.12)";
+          badgeEl.style.border = "1px solid rgba(16, 185, 129, 0.35)";
+          badgeEl.style.color = "#34d399";
+          badgeEl.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>TRẠM NGHỈ DƯỠNG MẮT • LIỆU TRÌNH 20-20-20</span>
+          `;
+        }
+
+        if (centerpieceEl && !centerpieceEl.querySelector(".infinity-track-box")) {
+          centerpieceEl.innerHTML = `
+            <div class="infinity-track-box">
+              <svg width="220" height="85" viewBox="0 0 220 85" fill="none">
+                <path d="M 55,42 C 55,18 95,18 110,42 C 125,66 165,66 165,42 C 165,18 125,18 110,42 C 95,66 55,66 55,42 Z" stroke="rgba(16, 185, 129, 0.22)" stroke-width="3" stroke-linecap="round"/>
+                <circle r="7" fill="#34d399">
+                  <animateMotion dur="5.5s" repeatCount="indefinite" path="M 55,42 C 55,18 95,18 110,42 C 125,66 165,66 165,42 C 165,18 125,18 110,42 C 95,66 55,66 55,42 Z" />
+                </circle>
+              </svg>
+              <div class="centerpiece-hint" style="color:#6ee7b7;">Dõi ánh mắt theo đốm sáng xanh vô cực để xoa dịu cơ thể mi</div>
+            </div>
+          `;
+        }
+
+        if (titleEl) titleEl.innerText = "THƯ GIÃN GIÁC MẠC & PHỤC HỒI THỊ LỰC";
+        if (subEl) subEl.innerText = "Đã hoàn thành 50 phút dùng máy tính. Hãy rời mắt khỏi màn hình để bảo vệ màng nước mắt và giải tỏa co thắt cơ điều tiết.";
+
+        if (guidesEl && !guidesEl.getAttribute("data-mode-set") || guidesEl.getAttribute("data-mode-set") !== "eyecare") {
+          guidesEl.setAttribute("data-mode-set", "eyecare");
+          guidesEl.innerHTML = `
+            <div class="rest-guide-card">
+              <div class="rest-guide-icon" style="color:#34d399;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
+              </div>
+              <div>
+                <div class="rest-guide-title">Úp Lòng Bàn Tay Ấm (Palming)</div>
+                <div class="rest-guide-desc">Xoa 2 bàn tay 15s cho ấm rồi khum tay úp nhẹ lên mắt 30s. Hơi ấm và bóng tối sẽ làm dịu tế bào cảm quang.</div>
+              </div>
+            </div>
+            <div class="rest-guide-card">
+              <div class="rest-guide-icon" style="color:#38bdf8;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M3 12h3m12 0h3M12 3v3m0 12v3"/><circle cx="12" cy="12" r="9"/></svg>
+              </div>
+              <div>
+                <div class="rest-guide-title">Quy Tắc 20-20-20 Thần Thánh</div>
+                <div class="rest-guide-desc">Phóng tầm mắt ra xa trên 6 mét ngoài ban công hoặc cửa sổ để cơ thể mi xả hết trạng thái căng cứng.</div>
+              </div>
+            </div>
+            <div class="rest-guide-card">
+              <div class="rest-guide-icon" style="color:#06b6d4;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+              </div>
+              <div>
+                <div class="rest-guide-title">Chớp Mắt Sâu 10 Lần & Uống Nước Ấm</div>
+                <div class="rest-guide-desc">Chớp mắt thật chậm để tráng đều dịch ẩm lên giác mạc, uống 1 cốc nước ấm giúp thanh lọc và phục hồi độ ẩm.</div>
+              </div>
+            </div>
+          `;
+        }
+
+        if (actionsEl) {
+          actionsEl.innerHTML = `
+            <button class="btn-rest-action emerald" onclick="addBreakMinutes(5)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+              <span>Nghỉ thêm 5 phút</span>
+            </button>
+            <button class="btn-rest-action ghost" onclick="earlyFinishBreak()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span>Vào ca mới ngay</span>
+            </button>
+          `;
+        }
+
+        clearInterval(breathingPhaseTimer);
+
+      } else {
+        // Study Mode
+        if (badgeEl) {
+          badgeEl.style.background = "rgba(245, 158, 11, 0.12)";
+          badgeEl.style.border = "1px solid rgba(245, 158, 11, 0.35)";
+          badgeEl.style.color = "#fbbf24";
+          badgeEl.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            <span>KHÔNG GIAN HỒI PHỤC NĂNG LƯỢNG NÃO BỘ</span>
+          `;
+        }
+
+        if (centerpieceEl && !centerpieceEl.querySelector(".breathing-pulse-ring")) {
+          centerpieceEl.innerHTML = `
+            <div class="breathing-pulse-ring">
+              <div class="breathing-phase-guide" id="breathingPhaseGuide">Hít sâu bằng mũi (4s)...</div>
+            </div>
+            <div class="centerpiece-hint" style="color:#fcd34d; margin-top:6px;">Chu kỳ hít thở 4-7-8 giúp xoa dịu hệ thần kinh giao cảm</div>
+          `;
+        }
+
+        if (titleEl) titleEl.innerText = "GIỜ NGHỈ NGƠI & TÁI TẠO DOPAMINE";
+        if (subEl) subEl.innerText = "Vừa trải qua ca học tập trung cao độ. Hãy ngắt kết nối với mọi màn hình để não bộ củng cố kiến thức vào trí nhớ dài hạn.";
+
+        if (guidesEl && !guidesEl.getAttribute("data-mode-set") || guidesEl.getAttribute("data-mode-set") !== "study") {
+          guidesEl.setAttribute("data-mode-set", "study");
+          guidesEl.innerHTML = `
+            <div class="rest-guide-card">
+              <div class="rest-guide-icon" style="color:#fbbf24;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+              </div>
+              <div>
+                <div class="rest-guide-title">Rời Bàn Học & Đi Bộ 50 Bước</div>
+                <div class="rest-guide-desc">Đứng dậy khỏi ghế, vươn vai và đi bộ nhẹ quanh phòng để bơm máu và oxy tươi mới lên bán cầu não.</div>
+              </div>
+            </div>
+            <div class="rest-guide-card">
+              <div class="rest-guide-icon" style="color:#f87171;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+              </div>
+              <div>
+                <div class="rest-guide-title">Bảo Vệ Não Khỏi Dopamine Rác</div>
+                <div class="rest-guide-desc">Tuyệt đối không lướt TikTok/Shorts trong giờ nghỉ để não bộ có khoảng tĩnh thực thụ, tránh cạn kiệt ý chí.</div>
+              </div>
+            </div>
+            <div class="rest-guide-card">
+              <div class="rest-guide-icon" style="color:#a78bfa;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M5.5 21v-2a6.5 6.5 0 0 1 13 0v2"/></svg>
+              </div>
+              <div>
+                <div class="rest-guide-title">Xoay Nhẹ Khớp Cổ & Thả Lỏng Vai</div>
+                <div class="rest-guide-desc">Nghiêng nhẹ đầu sang 2 bên và xoay bả vai 10 vòng để giải tỏa chèn ép dây thần kinh sau thời gian dài cúi học.</div>
+              </div>
+            </div>
+          `;
+        }
+
+        if (actionsEl) {
+          actionsEl.innerHTML = `
+            <button class="btn-rest-action amber" onclick="earlyFinishBreak()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span>Sẵn sàng ca học tiếp theo</span>
+            </button>
+            <button class="btn-rest-action ghost" onclick="addBreakMinutes(5)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+              <span>Nghỉ thêm 5 phút</span>
+            </button>
+          `;
+        }
+
+        // Live 4-7-8 breathing phase cycle
+        if (!breathingPhaseTimer) {
+          breathingPhaseIndex = 0;
+          const phases = [
+            { text: "Hít sâu bằng mũi (4s)...", dur: 4 },
+            { text: "Giữ hơi thư thái (7s)...", dur: 7 },
+            { text: "Thở chậm bằng miệng (8s)...", dur: 8 }
+          ];
+          let curDur = phases[0].dur;
+          breathingPhaseTimer = setInterval(() => {
+            curDur--;
+            if (curDur <= 0) {
+              breathingPhaseIndex = (breathingPhaseIndex + 1) % phases.length;
+              curDur = phases[breathingPhaseIndex].dur;
+              const guideEl = document.getElementById("breathingPhaseGuide");
+              if (guideEl) guideEl.innerText = phases[breathingPhaseIndex].text;
+            }
+          }, 1000);
+        }
       }
     }
 
     function hideRestModal() {
       const modal = document.getElementById("restModalOverlay");
-      modal.classList.remove("active");
+      if (modal) {
+        modal.classList.remove("active");
+        const guidesEl = document.getElementById("restGuidanceCards");
+        if (guidesEl) guidesEl.removeAttribute("data-mode-set");
+      }
+      document.body.classList.remove("in-break-lockout");
+      clearInterval(breathingPhaseTimer);
+      breathingPhaseTimer = null;
       cancelEmergencyUnlock();
     }
 
