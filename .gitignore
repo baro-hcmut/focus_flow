@@ -28,3 +28,7 @@ verified_*.png
 .venv
 env/
 venv/
+
+# Root fallback icon (canonical is in assets/)
+/focus_flow_v2.ico
+
