@@ -1,7 +1,8 @@
 import json
 import os
 
-CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.json')
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CONFIG_FILE = os.path.join(ROOT_DIR, 'config.json')
 
 DEFAULT_CONFIG = {
     "focus_minutes": 50,

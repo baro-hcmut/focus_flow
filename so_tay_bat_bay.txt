@@ -1,9 +1,0 @@
-[2026-11-06 11:28] Ca #1 🟡
-  -> Bẫy/Lỗi: Quen doi don vi phut sang giay
-
-[2026-11-06 14:05] Ca #1 🔴
-  -> Bẫy/Lỗi: Sai
-
-[2026-11-06 14:06] Ca #1 🔴
-  -> Bẫy/Lỗi: bài tập
-

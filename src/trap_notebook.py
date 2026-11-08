@@ -3,7 +3,8 @@ import time
 import tkinter as tk
 import ctypes
 
-TRAP_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'so_tay_bat_bay.txt')
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+TRAP_FILE = os.path.join(ROOT_DIR, 'so_tay_bat_bay.txt')
 
 def enable_dark_titlebar(window):
     try:

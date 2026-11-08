@@ -4,7 +4,8 @@ import struct
 import math
 import winsound
 
-SOUNDS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sounds')
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SOUNDS_DIR = os.path.join(ROOT_DIR, 'sounds')
 
 def ensure_sounds():
     os.makedirs(SOUNDS_DIR, exist_ok=True)

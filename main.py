@@ -35,6 +35,11 @@ import ctypes
 import threading
 import webview
 
+# Ensure src/ directory is in python search path
+SRC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'src')
+if os.path.exists(SRC_DIR) and SRC_DIR not in sys.path:
+    sys.path.insert(0, SRC_DIR)
+
 from sound_manager import play_break_sound, play_focus_sound, ensure_sounds, set_sound_volume
 from system_actions import turn_off_monitor, wake_up_monitor, lock_workstation
 from config_manager import load_config, save_config
@@ -48,7 +53,11 @@ STATE_BREAK = "BREAK"
 STATE_PAUSED = "PAUSED"
 
 PID_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.app.pid')
-APP_ICON_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app_icon.ico')
+APP_ICON_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'focus_flow_v2.ico')
+if not os.path.exists(APP_ICON_PATH):
+    APP_ICON_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'app_icon.ico')
+if not os.path.exists(APP_ICON_PATH):
+    APP_ICON_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app_icon.ico')
 user32 = ctypes.windll.user32
 
 try:

@@ -10,6 +10,11 @@ dist/
 *.zip
 *.log
 .app.pid
+config.json
+so_tay_bat_bay.txt
+*.docx
+*.bak
+Focus Flow.exe.config
 
 # Testing & Scratch
 test_extract/
