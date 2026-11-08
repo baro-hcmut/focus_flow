@@ -8995,14 +8995,26 @@ function copyPuritySummary() {
         });
       }
 
-      this.sakuraBlossoms = [{
-        baseX: this.width * 0.3, x: this.width * 0.3,
-        y: Math.random() * this.height,
-        size: 11.0, // Clear mini blossom: 11px speedY: 0.18, driftX: 0.10,
-        swayAmp: 2.5, swayFreq: 0.0004,
-        angle: 0, rotSpeed: 0.0004,
-        phase: 1, alpha: 0.82
-      }];
+      // Whole 5-Petal Blossoms on Mini HUD (Curated 4 graceful floating flowers)
+      this.sakuraBlossoms = [];
+      const miniBlossomSizes = [11.0, 9.5, 11.8, 10.0];
+      for (let i = 0; i < 4; i++) {
+        const bx = Math.random() * ((this.width || 380) + 40) - 20;
+        this.sakuraBlossoms.push({
+          baseX: bx,
+          x: bx,
+          y: Math.random() * (this.height || 64),
+          size: miniBlossomSizes[i],
+          speedY: Math.random() * 0.10 + 0.18,
+          driftX: Math.random() * 0.08 + 0.09,
+          swayAmp: Math.random() * 1.5 + 2.0,
+          swayFreq: Math.random() * 0.0003 + 0.0004,
+          angle: Math.random() * Math.PI * 2,
+          rotSpeed: (Math.random() - 0.4) * 0.0006 + 0.0003,
+          phase: Math.random() * Math.PI * 2,
+          alpha: Math.random() * 0.10 + 0.82
+        });
+      }
 
       this.sakuraFireflies = [];
       for (let i = 0; i < 6; i++) {
@@ -9445,15 +9457,32 @@ function copyPuritySummary() {
         });
       }
 
-      // 1 Blossom on mini
+      // Whole 5-Petal Blossoms on mini HUD (Smooth graceful drift)
       if (this.sakuraBlossoms) {
         this.sakuraBlossoms.forEach(b => {
-          b.baseX += b.driftX + breezeForce * 0.5;
-          b.y += b.speedY;
-          b.x = b.baseX + Math.sin(now * b.swayFreq + b.phase) * b.swayAmp;
-          b.angle += b.rotSpeed;
-          if (b.y > this.height + 15) { b.y = -15; b.baseX = Math.random() * (this.width + 40) - 20; b.x = b.baseX; }
-          if (b.baseX > this.width + 25) { b.baseX = -25; b.x = b.baseX; }
+          const drift = (typeof b.driftX === 'number' && !isNaN(b.driftX)) ? b.driftX : 0.10;
+          const spdY = (typeof b.speedY === 'number' && !isNaN(b.speedY)) ? b.speedY : 0.20;
+          const sFreq = (typeof b.swayFreq === 'number' && !isNaN(b.swayFreq)) ? b.swayFreq : 0.0004;
+          const sAmp = (typeof b.swayAmp === 'number' && !isNaN(b.swayAmp)) ? b.swayAmp : 2.5;
+          const rSpd = (typeof b.rotSpeed === 'number' && !isNaN(b.rotSpeed)) ? b.rotSpeed : 0.0004;
+
+          b.baseX += drift + breezeForce * 0.5;
+          b.y += spdY;
+          b.x = b.baseX + Math.sin(now * sFreq + b.phase) * sAmp;
+          b.angle += rSpd;
+
+          if (b.y > this.height + 18) {
+            b.y = -18;
+            b.baseX = Math.random() * (this.width + 50) - 25;
+            b.x = b.baseX;
+          }
+          if (b.baseX > this.width + 28) {
+            b.baseX = -28;
+            b.x = b.baseX;
+          } else if (b.baseX < -40) {
+            b.baseX = this.width + 20;
+            b.x = b.baseX;
+          }
 
           ctx.save();
           ctx.translate(b.x, b.y);
