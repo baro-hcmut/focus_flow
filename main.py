@@ -34,6 +34,8 @@ import json
 import ctypes
 import threading
 import webview
+import urllib.request
+import webbrowser
 
 # Ensure src/ directory is in python search path
 SRC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'src')
@@ -51,6 +53,59 @@ STATE_IDLE = "IDLE"
 STATE_FOCUS = "FOCUS"
 STATE_BREAK = "BREAK"
 STATE_PAUSED = "PAUSED"
+
+APP_VERSION = "1.0.0"
+GITHUB_REPO = "baro-hcmut/focus_flow"
+
+def parse_version_tuple(v_str):
+    """Parses a version string like 'v1.0' or '1.0.0' into an integer tuple (1, 0, 0)."""
+    cleaned = str(v_str).lower().lstrip('v')
+    parts = []
+    for p in cleaned.split('.'):
+        digits = ''.join(c for c in p if c.isdigit())
+        parts.append(int(digits) if digits else 0)
+    while len(parts) < 3:
+        parts.append(0)
+    return tuple(parts[:3])
+
+def check_github_update():
+    """Queries GitHub Releases API for the latest release and compares with current version."""
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
+    req = urllib.request.Request(url, headers={
+        "User-Agent": f"FocusFlow-App/{APP_VERSION}",
+        "Accept": "application/vnd.github+json"
+    })
+    try:
+        with urllib.request.urlopen(req, timeout=4) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+            latest_tag = data.get("tag_name", "").strip()
+            cur_tuple = parse_version_tuple(APP_VERSION)
+            latest_tuple = parse_version_tuple(latest_tag)
+
+            has_update = latest_tuple > cur_tuple
+
+            download_url = data.get("html_url", "")
+            for asset in data.get("assets", []):
+                if asset.get("name", "").endswith(".zip"):
+                    download_url = asset.get("browser_download_url")
+                    break
+
+            return {
+                "has_update": has_update,
+                "current_version": f"v{APP_VERSION.lstrip('v')}",
+                "latest_version": latest_tag,
+                "release_name": data.get("name", latest_tag),
+                "release_notes": data.get("body", ""),
+                "release_url": data.get("html_url", ""),
+                "download_url": download_url,
+                "published_at": data.get("published_at", "")
+            }
+    except Exception as e:
+        return {
+            "has_update": False,
+            "error": str(e),
+            "current_version": f"v{APP_VERSION.lstrip('v')}"
+        }
 
 PID_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.app.pid')
 APP_ICON_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'focus_flow_v2.ico')
@@ -235,6 +290,17 @@ class PomodoroApp:
                 pass
 
         threading.Thread(target=_set_icon_deferred, daemon=True).start()
+
+        def _check_update_deferred():
+            time.sleep(3.0)
+            try:
+                res = check_github_update()
+                if res.get("has_update"):
+                    self.eval_js(f"window.onUpdateAvailable && window.onUpdateAvailable({json.dumps(res)});")
+            except Exception:
+                pass
+
+        threading.Thread(target=_check_update_deferred, daemon=True).start()
 
     def _on_window_closed(self):
         self.on_close()
@@ -803,6 +869,18 @@ class Api:
 
     def get_daily_history(self):
         return self._app.config.get("daily_history", {})
+
+    def check_for_updates(self):
+        return check_github_update()
+
+    def open_external_url(self, url):
+        if url and (url.startswith("https://") or url.startswith("http://")):
+            try:
+                webbrowser.open(url)
+                return "ok"
+            except Exception as e:
+                return str(e)
+        return "invalid_url"
 
 
 def main():
