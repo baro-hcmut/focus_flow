@@ -113,9 +113,13 @@ def ensure_desktop_shortcut():
     try:
         exe_path = sys.executable
         exe_dir = os.path.dirname(exe_path)
-        icon_path = os.path.join(exe_dir, 'assets', 'focus_flow_v2.ico')
-        if not os.path.exists(icon_path):
-            icon_path = exe_path
+        icon_candidates = [
+            os.path.join(exe_dir, 'app_icon.ico'),
+            os.path.join(exe_dir, '_internal', 'assets', 'focus_flow_v2.ico'),
+            os.path.join(exe_dir, 'assets', 'focus_flow_v2.ico'),
+            exe_path
+        ]
+        icon_path = next((p for p in icon_candidates if os.path.exists(p)), exe_path)
 
         import win32com.client
         wscript = win32com.client.Dispatch("WScript.Shell")
@@ -125,21 +129,27 @@ def ensure_desktop_shortcut():
             os.path.join(user_profile, "Desktop"),
             os.path.join(user_profile, "OneDrive", "Desktop"),
         ]
+        try:
+            buf = ctypes.create_unicode_buffer(260)
+            ctypes.windll.shell32.SHGetFolderPathW(None, 0, None, 0, buf)
+            if buf.value:
+                desktop_dirs.insert(0, buf.value)
+        except Exception:
+            pass
 
         for d in set(desktop_dirs):
             if os.path.exists(d):
                 lnk_path = os.path.join(d, "Focus Flow.lnk")
-                if not os.path.exists(lnk_path):
-                    sc = wscript.CreateShortcut(lnk_path)
-                    sc.TargetPath = exe_path
-                    sc.WorkingDirectory = exe_dir
-                    sc.IconLocation = f"{icon_path},0"
-                    sc.Description = "Focus Flow • Pomodoro 50/10 Pro"
-                    sc.Save()
-                    try:
-                        ctypes.windll.shell32.SHChangeNotify(0x08000000, 0x1000, None, None)
-                    except Exception:
-                        pass
+                sc = wscript.CreateShortcut(lnk_path)
+                sc.TargetPath = exe_path
+                sc.WorkingDirectory = exe_dir
+                sc.IconLocation = f"{icon_path},0"
+                sc.Description = "Focus Flow • Pomodoro 50/10 Pro"
+                sc.Save()
+                try:
+                    ctypes.windll.shell32.SHChangeNotify(0x08000000, 0x1000, None, None)
+                except Exception:
+                    pass
     except Exception:
         pass
 
