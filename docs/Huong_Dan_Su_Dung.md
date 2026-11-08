@@ -22,8 +22,10 @@ Dưới đây là cẩm nang chi tiết hướng dẫn từng tính năng, cách
 
 ## 1. KHỞI ĐỘNG & THAO TÁC CƠ BẢN
 
-### Cách mở ứng dụng:
-- **Người dùng tải bản ZIP (.exe)**: Giải nén thư mục và nhấp đúp vào `Focus Flow.exe` (hoặc `Chay_Focus_Flow.bat` nếu máy bật chế độ chặn file từ Internet).
+### Cách mở ứng dụng & Tạo biểu tượng ngoài Desktop:
+- **Người dùng tải bản ZIP (.exe)**:
+  - Giải nén thư mục và nhấp đúp vào **`Chay_Focus_Flow.bat`**: File sẽ tự động gỡ cảnh báo bảo mật, **tự động tạo biểu tượng Focus Flow siêu nét ngoài Desktop**, và mở app ngay!
+  - Hoặc nhấp đúp vào file **`Tao_Shortcut_Desktop.bat`** để tạo lại biểu tượng ngoài Desktop bất cứ lúc nào.
 - **Người dùng chạy bằng Python**: Nhấp đúp vào shortcut `Focus Flow` ngoài Desktop hoặc chạy `scripts/Chay_Pomodoro_Khong_Hien_Console.vbs`.
 
 ### Thao tác điều khiển chính:

@@ -77,7 +77,11 @@ Vào Tab **`Cài Đặt`** ở thanh điều hướng:
 
 1. Vào mục [**Releases**](https://github.com/baro-hcmut/focus_flow/releases).
 2. Tải tệp nén **`Focus_Flow_v1.0_Windows.zip`** về máy.
-3. Giải nén tệp zip ➔ Nhấp đúp vào **`Focus Flow.exe`** (hoặc `Chay_Focus_Flow.bat`) là dùng ngay!
+3. Giải nén tệp zip ➔ Nhấp đúp vào **`Chay_Focus_Flow.bat`**:
+   - Tự động gỡ bỏ cảnh báo bảo mật Windows.
+   - **Tự động tạo biểu tượng Focus Flow siêu nét ngoài Desktop**.
+   - Khởi động ứng dụng ngay lập tức!
+   *(Bạn cũng có thể nhấp đúp file `Tao_Shortcut_Desktop.bat` để tạo lại icon ngoài Desktop bất cứ lúc nào).*
 
 > 💡 **Mẹo:** Ứng dụng đã được tích hợp sẵn 3 tầng bảo vệ chống lỗi .NET và tự động bỏ qua cảnh báo bảo mật Windows khi tải từ mạng về.
 

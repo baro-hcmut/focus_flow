@@ -106,9 +106,48 @@ def manage_single_instance():
         pass
 
 
+def ensure_desktop_shortcut():
+    """Automatically creates a Desktop shortcut for Focus Flow if in frozen (standalone .exe) mode and shortcut does not exist."""
+    if not getattr(sys, 'frozen', False):
+        return
+    try:
+        exe_path = sys.executable
+        exe_dir = os.path.dirname(exe_path)
+        icon_path = os.path.join(exe_dir, 'assets', 'focus_flow_v2.ico')
+        if not os.path.exists(icon_path):
+            icon_path = exe_path
+
+        import win32com.client
+        wscript = win32com.client.Dispatch("WScript.Shell")
+        user_profile = os.environ.get("USERPROFILE", "")
+        desktop_dirs = [
+            wscript.SpecialFolders("Desktop"),
+            os.path.join(user_profile, "Desktop"),
+            os.path.join(user_profile, "OneDrive", "Desktop"),
+        ]
+
+        for d in set(desktop_dirs):
+            if os.path.exists(d):
+                lnk_path = os.path.join(d, "Focus Flow.lnk")
+                if not os.path.exists(lnk_path):
+                    sc = wscript.CreateShortcut(lnk_path)
+                    sc.TargetPath = exe_path
+                    sc.WorkingDirectory = exe_dir
+                    sc.IconLocation = f"{icon_path},0"
+                    sc.Description = "Focus Flow • Pomodoro 50/10 Pro"
+                    sc.Save()
+                    try:
+                        ctypes.windll.shell32.SHChangeNotify(0x08000000, 0x1000, None, None)
+                    except Exception:
+                        pass
+    except Exception:
+        pass
+
+
 class PomodoroApp:
     def __init__(self):
         manage_single_instance()
+        ensure_desktop_shortcut()
         ensure_sounds()
 
         # Load configurations
