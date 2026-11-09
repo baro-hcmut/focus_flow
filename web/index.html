@@ -5091,6 +5091,234 @@ body[data-fx="pixel"] .ambient-pill.active {
   box-shadow: 0 0 14px rgba(168, 85, 247, 0.5) !important;
 }
 
+
+    /* ==========================================================================
+       ZEN MINIMAL REST SCREEN (Human-designed mindfulness rest standard)
+       ========================================================================== */
+    .mode-segment-btn {
+      border-radius: 999px !important;
+    }
+
+    /* Analytics Tab Clean Legibility Backdrop */
+    #tab-analytics .analytics-dashboard {
+      background: rgba(10, 14, 26, 0.65) !important;
+      backdrop-filter: blur(16px) !important;
+      -webkit-backdrop-filter: blur(16px) !important;
+      border-radius: 12px !important;
+      padding: 12px !important;
+      border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    }
+
+    .zen-rest-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      max-width: 520px;
+      width: 90%;
+      text-align: center;
+      animation: fadeInZen 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes fadeInZen {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .zen-mode-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 14px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      margin-bottom: 20px;
+    }
+
+    .mode-eyecare .zen-mode-badge {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.35);
+      color: #34d399;
+    }
+
+    .zen-clock-circle {
+      position: relative;
+      width: 170px;
+      height: 170px;
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 22px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.08) 0%, rgba(15, 23, 42, 0.4) 70%);
+      border: 1.5px solid rgba(56, 189, 248, 0.25);
+      box-shadow: 0 0 35px rgba(56, 189, 248, 0.18), inset 0 0 20px rgba(56, 189, 248, 0.08);
+      animation: zenBreathe 6s ease-in-out infinite;
+    }
+
+    .mode-eyecare .zen-clock-circle {
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, rgba(15, 23, 42, 0.4) 70%);
+      border-color: rgba(16, 185, 129, 0.3);
+      box-shadow: 0 0 35px rgba(16, 185, 129, 0.18), inset 0 0 20px rgba(16, 185, 129, 0.08);
+    }
+
+    @keyframes zenBreathe {
+      0%, 100% {
+        transform: scale(1);
+        border-color: rgba(56, 189, 248, 0.25);
+      }
+      50% {
+        transform: scale(1.04);
+        border-color: rgba(56, 189, 248, 0.45);
+        box-shadow: 0 0 45px rgba(56, 189, 248, 0.28), inset 0 0 25px rgba(56, 189, 248, 0.14);
+      }
+    }
+
+    .zen-clock-digits {
+      font-size: 44px;
+      font-weight: 800;
+      font-family: var(--mono);
+      letter-spacing: -0.02em;
+      color: #ffffff;
+      line-height: 1;
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+    }
+
+    .zen-clock-sub {
+      font-size: 10px;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 5px;
+    }
+
+    .zen-title-text {
+      font-size: 20px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 6px;
+      letter-spacing: -0.01em;
+    }
+
+    .zen-subtitle-tip {
+      font-size: 13px;
+      color: #94a3b8;
+      max-width: 440px;
+      line-height: 1.5;
+      margin-bottom: 22px;
+    }
+
+    .zen-guidance-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+      max-width: 440px;
+      margin-bottom: 22px;
+    }
+
+    .zen-guide-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 9px 14px;
+      text-align: left;
+      backdrop-filter: blur(10px);
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .zen-guide-card:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .zen-guide-icon {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .zen-guide-body {
+      flex: 1;
+    }
+
+    .zen-guide-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #f1f5f9;
+      margin-bottom: 1.5px;
+    }
+
+    .zen-guide-desc {
+      font-size: 11px;
+      color: #94a3b8;
+      line-height: 1.35;
+    }
+
+    .zen-actions-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-zen-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .btn-zen-action.ghost {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #cbd5e1;
+    }
+
+    .btn-zen-action.ghost:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .btn-zen-action.primary {
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.3);
+    }
+
+    .btn-zen-action.primary:hover {
+      background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+      box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45);
+    }
+
+    .mode-eyecare .btn-zen-action.primary {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      border-color: rgba(16, 185, 129, 0.4);
+      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);
+    }
+
+    .mode-eyecare .btn-zen-action.primary:hover {
+      background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+      box-shadow: 0 6px 18px rgba(5, 150, 105, 0.45);
+    }
 </style>
 </head>
 <body class="theme-lofi preload" data-fx="twilight">
@@ -5194,8 +5422,8 @@ body[data-fx="pixel"] .ambient-pill.active {
     </div>
 
     <div class="titlebar-right">
-      <button class="tb-btn" onclick="openCustomTimerModal('movie')" title="Hẹn giờ xem phim & giải trí (F9)">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
+      <button class="tb-btn" onclick="openLeisureModal()" title="Hẹn giờ giải lao tự do (F9)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
       </button>
       <button class="tb-btn" onclick="pyCall('toggle_mini_mode')" title="Thu nhỏ thành Mini HUD nổi trên màn hình (F8)">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><rect x="12" y="9" width="8" height="6" rx="1" fill="currentColor"/></svg>
@@ -5240,11 +5468,11 @@ body[data-fx="pixel"] .ambient-pill.active {
       <div class="mode-switcher-bar">
         <button class="mode-segment-btn active" id="btnModeStudy" onclick="switchAppMode('study')">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-          <span>Tập Trung Học Tập</span>
+          <span>Học Tập & Làm Việc</span>
         </button>
         <button class="mode-segment-btn" id="btnModeEyeCare" onclick="switchAppMode('eyecare')">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-          <span>Nghỉ Mắt 50/10</span>
+          <span>Bảo Vệ Mắt</span>
         </button>
       </div>
 
@@ -5406,10 +5634,10 @@ body[data-fx="pixel"] .ambient-pill.active {
       <div class="eyecare-tips-card" id="eyeCareGuideWrapper" style="display:none;">
         <div class="eyecare-tips-title">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-          <span>CHẾ ĐỘ NGHỈ MẮT 50/10 • BẢO VỆ THỊ GIÁC & CỘT SỐNG</span>
+          <span>CHẾ ĐỘ BẢO VỆ MẮT • GIỮ GÌN THỊ GIÁC & CƠ THỂ</span>
         </div>
         <div style="font-size:10.5px; color:#94a3b8; line-height:1.35;">
-          Chu kỳ bảo vệ thị giác: 50 phút làm việc • 10 phút nghỉ ngơi thả lỏng mắt và cột sống (không ép mục tiêu, không chặn web).
+          Chu kỳ kết hợp làm việc và nghỉ ngơi định kỳ, giúp thư giãn mắt và giảm căng thẳng cơ thể (không ép mục tiêu, không chặn web).
         </div>
         <div class="eyecare-tips-grid">
           <div class="eyecare-tip-item">
@@ -5444,20 +5672,20 @@ body[data-fx="pixel"] .ambient-pill.active {
         <div>
           <div class="section-head-title">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-            <span>Sổ Ý Tưởng Bất Chợt (Brain Dump)</span>
+            <span>Sổ Ý Tưởng (Brain Dump)</span>
           </div>
-          <div class="section-head-subtitle">Cất nhanh ý tưởng hoặc việc muốn làm sau để không làm đứt dòng suy nghĩ</div>
+          <div class="section-head-subtitle">Ghi nhanh suy nghĩ nảy sinh để không làm đứt mạch tập trung</div>
         </div>
         <div style="display:flex; gap:6px;">
-          <button class="btn-hero-ghost" style="height:28px; padding:0 8px; font-size:10.5px;" onclick="pyCall('clear_resolved_parking')">Dọn việc xong</button>
+          <button class="btn-hero-ghost" style="height:28px; padding:0 8px; font-size:10.5px;" onclick="pyCall('clear_resolved_parking')">Xóa việc đã xong</button>
           <button class="btn-hero-ghost" style="height:28px; padding:0 8px; font-size:10.5px; color:var(--rose);" onclick="pyCall('clear_parking_lot')">Xóa hết</button>
         </div>
       </div>
 
       <div class="quick-capture-bar" style="margin-top:2px;">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        <input type="text" class="quick-capture-input" id="tab2CaptureInput" placeholder="Ghi nhanh ý tưởng hoặc việc muốn làm sau ca học... (Enter)" onkeydown="if(event.key==='Enter') submitTab2Capture()">
-        <button class="btn-quick-capture-submit" onclick="submitTab2Capture()">Cất việc</button>
+        <input type="text" class="quick-capture-input" id="tab2CaptureInput" placeholder="Ghi nhanh suy nghĩ hoặc việc cần làm sau ca học... (Enter)" onkeydown="if(event.key==='Enter') submitTab2Capture()">
+        <button class="btn-quick-capture-submit" onclick="submitTab2Capture()">Lưu lại</button>
       </div>
 
       <div class="parking-scroll-area" id="parkingListContainer"></div>
@@ -5471,7 +5699,7 @@ body[data-fx="pixel"] .ambient-pill.active {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
             <span>Thống Kê Năng Suất & Web/App</span>
           </div>
-          <div class="section-head-subtitle">Bảng đối chiếu minh bạch: Học tập sâu vs Học trực tuyến vs Giải trí</div>
+          <div class="section-head-subtitle">Phân bổ thời gian: Học tập sâu • Học trực tuyến • Giải trí</div>
         </div>
         <div style="display:flex; gap:6px; align-items:center;">
           <button class="study-ytb-toggle-pill" id="tab3ToggleYtbStudy" onclick="toggleYoutubeFbStudy()">
@@ -5541,7 +5769,7 @@ body[data-fx="pixel"] .ambient-pill.active {
       </div>
     </div>
 
-    <!-- ==================== TAB 4: CÀI ĐẶT & KỶ LUẬT THÉP ==================== -->
+    <!-- ==================== TAB 4: CÀI ĐẶT ==================== -->
     <div class="tab-view" id="tab-settings">
       <div class="settings-list-scroll">
 
@@ -5584,32 +5812,32 @@ body[data-fx="pixel"] .ambient-pill.active {
               <button class="pill-btn" id="btnTarget2" onclick="setTargetSessions(2)">2 ca</button>
               <button class="pill-btn active" id="btnTarget3" onclick="setTargetSessions(3)">3 ca</button>
               <button class="pill-btn" id="btnTarget4" onclick="setTargetSessions(4)">4 ca</button>
-              <button class="pill-btn" id="btnTarget0" onclick="setTargetSessions(0)">Vô hạn</button>
+              <button class="pill-btn" id="btnTarget0" onclick="setTargetSessions(0)">Không giới hạn</button>
             </div>
           </div>
         </div>
 
-        <!-- Cơ Chế Kỷ Luật -->
+        <!-- Cơ Chế Nhắc Nghỉ -->
         <div class="settings-group">
-          <div class="settings-group-title">Cơ Chế Ép Buộc Khi Đến Giờ Nghỉ</div>
+          <div class="settings-group-title">Cơ Chế Nhắc Nghỉ Khi Hết Giờ</div>
           <div class="settings-item-row">
             <div>
-              <div class="settings-label-title">Rèm Đen Phủ Màn Hình (Khuyên dùng)</div>
-              <div class="settings-label-desc">Hiển thị đếm ngược nghỉ ngơi và bài tập bảo vệ mắt</div>
+              <div class="settings-label-title">Toàn Màn Hình Nghỉ Ngơi (Khuyên dùng)</div>
+              <div class="settings-label-desc">Hiển thị không gian thư giãn và đếm ngược giờ nghỉ</div>
             </div>
             <input type="radio" name="enforce_mode" id="enf_overlay" checked onchange="setEnforcement('overlay')">
           </div>
           <div class="settings-item-row">
             <div>
-              <div class="settings-label-title">Tắt Màn Hình Hoàn Toàn</div>
-              <div class="settings-label-desc">Gửi tín hiệu tắt màn hình để bắt buộc đứng dậy</div>
+              <div class="settings-label-title">Tắt Màn Hình Máy Tính</div>
+              <div class="settings-label-desc">Gửi tín hiệu tắt màn hình tạm thời để bạn đứng dậy vận động</div>
             </div>
             <input type="radio" name="enforce_mode" id="enf_turnoff" onchange="setEnforcement('turnoff')">
           </div>
           <div class="settings-item-row">
             <div>
-              <div class="settings-label-title">Khóa Máy Trạm (Lock Windows)</div>
-              <div class="settings-label-desc">Khóa màn hình máy tính để nghỉ giải lao</div>
+              <div class="settings-label-title">Khóa Màn Hình (Lock Windows)</div>
+              <div class="settings-label-desc">Tự động khóa màn hình Windows (Win+L) khi hết ca học</div>
             </div>
             <input type="radio" name="enforce_mode" id="enf_lock" onchange="setEnforcement('lock')">
           </div>
@@ -5621,8 +5849,8 @@ body[data-fx="pixel"] .ambient-pill.active {
 
           <div class="settings-item-row">
             <div>
-              <div class="settings-label-title">Hàng Rào Trì Hoãn (Friction Barrier 3s)</div>
-              <div class="settings-label-desc">Hiện lời cảnh tỉnh 3 giây khi vô tình mở Facebook/YouTube</div>
+              <div class="settings-label-title">Nhắc Nhở Giữ Tập Trung (3 giây)</div>
+              <div class="settings-label-desc">Hiển thị nhắc nhở nhẹ 3 giây khi mở trang web xao nhãng</div>
             </div>
             <div class="switch-toggle on" id="toggle-friction_barrier_enabled" onclick="toggleSetting('friction_barrier_enabled')">
               <div class="switch-knob"></div>
@@ -5631,8 +5859,8 @@ body[data-fx="pixel"] .ambient-pill.active {
 
           <div class="settings-item-row">
             <div>
-              <div class="settings-label-title">Nhắc Nhở Bảo Vệ Thị Giác 20-20-20</div>
-              <div class="settings-label-desc">Gợi ý bài tập chớp mắt và nhìn xa khi nghỉ ngơi</div>
+              <div class="settings-label-title">Nhắc Nhở Bảo Vệ Mắt</div>
+              <div class="settings-label-desc">Gợi ý thư giãn mắt và nhìn xa khi đến giờ nghỉ</div>
             </div>
             <div class="switch-toggle on" id="toggle-eye_care_enabled" onclick="toggleSetting('eye_care_enabled')">
               <div class="switch-knob"></div>
@@ -5641,8 +5869,8 @@ body[data-fx="pixel"] .ambient-pill.active {
 
           <div class="settings-item-row">
             <div>
-              <div class="settings-label-title">Nhắc Nhở Nửa Chặng Đường (Phút 25)</div>
-              <div class="settings-label-desc">Âm thanh nhẹ nhắc kiểm tra tiến độ giải quyết mục tiêu</div>
+              <div class="settings-label-title">Nhắc Nhở Giữa Ca Học</div>
+              <div class="settings-label-desc">Âm thanh nhẹ nhắc kiểm tra tiến độ công việc</div>
             </div>
             <div class="switch-toggle on" id="toggle-halfway_nudge_enabled" onclick="toggleSetting('halfway_nudge_enabled')">
               <div class="switch-knob"></div>
@@ -5651,8 +5879,8 @@ body[data-fx="pixel"] .ambient-pill.active {
 
           <div class="settings-item-row">
             <div>
-              <div class="settings-label-title">Nhắc Nhở Đóng Gói (Phút 48)</div>
-              <div class="settings-label-desc">Báo trước 2 phút để soát lại bài và đúc rút bẫy lỗi sai</div>
+              <div class="settings-label-title">Nhắc Nhở Kết Thúc Ca (Trước 2 phút)</div>
+              <div class="settings-label-desc">Báo trước 2 phút để lưu lại công việc và chuẩn bị nghỉ ngơi</div>
             </div>
             <div class="switch-toggle on" id="toggle-wrapup_nudge_enabled" onclick="toggleSetting('wrapup_nudge_enabled')">
               <div class="switch-knob"></div>
@@ -5707,9 +5935,9 @@ body[data-fx="pixel"] .ambient-pill.active {
   <!-- 4. BOTTOM STATUS BAR -->
   <div class="bottom-bar">
     <div id="footerStatsLabel" style="cursor:pointer;" onclick="switchTab('analytics')" title="Bấm để xem thống kê Web/App chi tiết">
-      Hôm nay: 0 ca (0 phút) • 100% Tinh khiết <span style="text-decoration:underline; color:#38bdf8;">[Xem Thống Kê]</span>
+      Hôm nay: 0 ca (0 phút) • 100% Tập trung <span style="text-decoration:underline; color:#38bdf8;">[Xem Thống Kê]</span>
     </div>
-    <button class="footer-action-link" onclick="switchTab('parking')" title="Nhấn Ctrl+Shift+D để cất nhanh ý tưởng">
+    <button class="footer-action-link" onclick="switchTab('parking')" title="Nhấn Ctrl+Shift+D để ghi nhanh suy nghĩ">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
       <span>Sổ Ý Tưởng (Ctrl+Shift+D)</span>
     </button>
@@ -5739,14 +5967,14 @@ body[data-fx="pixel"] .ambient-pill.active {
           <div class="purity-score-sub">Độ tinh khiết</div>
         </div>
         <div class="purity-summary-col">
-          <div class="purity-status-headline" id="reportPurityHeadline">XUẤT SẮC • DÒNG CHẢY SÂU</div>
+          <div class="purity-status-headline" id="reportPurityHeadline">TẬP TRUNG XUẤT SẮC</div>
           <div class="purity-metrics-row">
             <div class="metric-box">
-              <div class="metric-label">Tập trung thuần túy</div>
+              <div class="metric-label">Thời gian học sâu</div>
               <div class="metric-val pure" id="reportPureTime">50 phút 00 giây</div>
             </div>
             <div class="metric-box">
-              <div class="metric-label">Mở web xao nhãng</div>
+              <div class="metric-label">Thời gian ngoài lề</div>
               <div class="metric-val distracted" id="reportDistractedTime">0 giây</div>
             </div>
           </div>
@@ -5782,15 +6010,15 @@ body[data-fx="pixel"] .ambient-pill.active {
         <div class="modal-title-wrap">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           <div>
-            <div class="modal-title-text">TÙY CHỈNH THỜI GIAN & HẸN GIỜ XEM PHIM</div>
-            <div class="modal-sub-text">Tự do chỉnh số phút tập trung hoặc hẹn giờ xem phim có kiểm soát</div>
+            <div class="modal-title-text">TÙY CHỈNH CHU KỲ HỌC TẬP</div>
+            <div class="modal-sub-text">Thiết lập số phút học tập, thời gian nghỉ và số ca mục tiêu</div>
           </div>
         </div>
         <button class="btn-close-modal" onclick="closeCustomTimerModal()">✕</button>
       </div>
 
-      <!-- 1. Tùy chỉnh chu kỳ học & nghỉ -->
-      <div class="report-section-label">TÙY CHỈNH CHU KỲ (HỌC TẬP & NGHỈ NGƠI)</div>
+      <!-- Chu kỳ học & nghỉ -->
+      <div class="report-section-label">CHU KỲ TẬP TRUNG & NGHỈ NGƠI</div>
       <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
         <div style="flex:1;">
           <div style="font-size:11px; color:#94a3b8; margin-bottom:4px; font-weight:600;">Thời gian học</div>
@@ -5807,46 +6035,76 @@ body[data-fx="pixel"] .ambient-pill.active {
           </div>
         </div>
       </div>
+
+      <!-- Quick Preset Chips -->
+      <div style="display:flex; gap:6px; margin-bottom:14px;">
+        <button class="pill-btn" onclick="setPresetCycle(25, 5)" style="flex:1; font-size:10.5px;">25/5' (Chuẩn)</button>
+        <button class="pill-btn active" onclick="setPresetCycle(50, 10)" style="flex:1; font-size:10.5px;">50/10' (Sâu)</button>
+        <button class="pill-btn" onclick="setPresetCycle(90, 20)" style="flex:1; font-size:10.5px;">90/20' (Dài)</button>
+      </div>
+
       <!-- Số ca mục tiêu -->
-      <div style="margin-bottom:14px;">
+      <div style="margin-bottom:16px;">
         <div style="font-size:11px; color:#94a3b8; margin-bottom:6px; font-weight:600;">Số ca học mục tiêu hôm nay</div>
         <div style="display:flex; gap:6px;">
           <button class="pill-btn" id="modalTarget1" onclick="setTargetSessions(1)" style="flex:1;">1 ca</button>
           <button class="pill-btn" id="modalTarget2" onclick="setTargetSessions(2)" style="flex:1;">2 ca</button>
           <button class="pill-btn active" id="modalTarget3" onclick="setTargetSessions(3)" style="flex:1;">3 ca</button>
           <button class="pill-btn" id="modalTarget4" onclick="setTargetSessions(4)" style="flex:1;">4 ca</button>
-          <button class="pill-btn" id="modalTarget0" onclick="setTargetSessions(0)" style="flex:1;">Vô hạn</button>
+          <button class="pill-btn" id="modalTarget0" onclick="setTargetSessions(0)" style="flex:1;">Không giới hạn</button>
         </div>
-      </div>
-      <div style="display:flex; justify-content:flex-end; margin-bottom:12px;">
-        <button class="btn-hero-primary" style="height:34px; padding:0 20px;" onclick="applyCustomTimerMinutes()">Áp dụng chu kỳ</button>
       </div>
 
-      <!-- 2. Hẹn Giờ Xem Phim -->
-      <div style="border-top:1px solid var(--border); padding-top:10px; margin-top:6px;">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
-          <div style="font-size:12px; font-weight:700; color:#fbbf24; display:flex; align-items:center; gap:5px;">
-            <span>HẸN GIỜ XEM PHIM & GIẢI TRÍ</span>
-          </div>
-          <span style="font-size:9.5px; background:rgba(245,158,11,0.12); color:#fbbf24; padding:1px 6px; border-radius:4px; border:1px solid rgba(245,158,11,0.25);">Tạm ngưng chặn phim</span>
-        </div>
-        <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">
-          Hẹn giờ cho buổi xem phim của bạn. Khi hết giờ, chuông nhắc nhở sẽ rung lên để bạn tắt phim, đi ngủ hoặc vận động bảo vệ thị giác.
-        </div>
-        <div class="movie-presets-grid">
-          <div class="movie-card-btn" onclick="startMovieTimer(45)">
-            <span class="m-title">45 Phút</span>
-            <span class="m-desc">1 Tập Anime / Drama</span>
-          </div>
-          <div class="movie-card-btn" onclick="startMovieTimer(90)">
-            <span class="m-title">90 Phút</span>
-            <span class="m-desc">1 Phim điện ảnh vừa</span>
-          </div>
-          <div class="movie-card-btn" onclick="startMovieTimer(120)">
-            <span class="m-title">120 Phút</span>
-            <span class="m-desc">1 Phim rạp bom tấn</span>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:11px; color:var(--text-muted);">Thay đổi sẽ áp dụng ngay cho ca tiếp theo</span>
+        <button class="btn-hero-primary" style="height:34px; padding:0 22px;" onclick="applyCustomTimerMinutes()">Áp dụng chu kỳ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== DIALOG / MODAL: HẸN GIỜ GIẢI LAO TỰ DO (F9) ==================== -->
+  <div class="modal-backdrop" id="leisureTimerModal">
+    <div class="modal-card">
+      <div class="modal-header-row">
+        <div class="modal-title-wrap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+          <div>
+            <div class="modal-title-text" style="color:#fbbf24;">HẸN GIỜ GIẢI LAO TỰ DO</div>
+            <div class="modal-sub-text">Hẹn giờ nghỉ ngơi, nghe nhạc hoặc xem phim có kiểm soát</div>
           </div>
         </div>
+        <button class="btn-close-modal" onclick="closeLeisureModal()">✕</button>
+      </div>
+
+      <div style="font-size:11.5px; color:var(--text-muted); margin-bottom:12px; line-height:1.4;">
+        Khi bật chế độ giải lao, Focus Flow sẽ tạm dừng giám sát và phát chuông nhẹ nhàng khi hết giờ để bạn quay lại công việc.
+      </div>
+
+      <!-- Presets Grid -->
+      <div style="font-size:11px; color:#94a3b8; margin-bottom:6px; font-weight:600;">Chọn mốc thời gian gợi ý</div>
+      <div class="movie-presets-grid" style="margin-bottom:14px;">
+        <div class="movie-card-btn" onclick="startLeisureTimer(30)">
+          <span class="m-title">30 Phút</span>
+          <span class="m-desc">Giải lao nhanh</span>
+        </div>
+        <div class="movie-card-btn" onclick="startLeisureTimer(60)">
+          <span class="m-title">60 Phút</span>
+          <span class="m-desc">Thư giãn / Nghe nhạc</span>
+        </div>
+        <div class="movie-card-btn" onclick="startLeisureTimer(90)">
+          <span class="m-title">90 Phút</span>
+          <span class="m-desc">Xem phim / Nghỉ ngơi</span>
+        </div>
+      </div>
+
+      <!-- Custom minutes option -->
+      <div style="font-size:11px; color:#94a3b8; margin-bottom:6px; font-weight:600;">Hoặc nhập số phút tùy chọn</div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <div class="custom-input-box" style="flex:1; margin-bottom:0;">
+          <input type="number" min="5" max="300" id="leisureCustomMinutesInput" value="45" class="custom-minutes-input">
+          <span style="font-size:12px; color:var(--text-secondary); font-weight:500;">phút</span>
+        </div>
+        <button class="btn-hero-primary" style="height:36px; padding:0 20px; background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%);" onclick="startLeisureTimerFromInput()">Bắt đầu giờ nghỉ</button>
       </div>
     </div>
   </div>
@@ -6002,38 +6260,78 @@ body[data-fx="pixel"] .ambient-pill.active {
 
   <!-- REST MODE MODAL (Full Screen Sanctuary & Disciplined Break) -->
   <div class="rest-modal-overlay" id="restModalOverlay" onmousedown="handleModalBackgroundClick(event)">
-    <!-- Dynamic Mode Badge -->
-    <div class="rest-mode-badge" id="restModeBadge"></div>
+    <!-- Zen Minimal Sanctuary Rest Experience -->
+    <div class="zen-rest-container">
+      <!-- Dynamic Mode Pill -->
+      <div class="zen-mode-badge" id="restModeBadge">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/></svg>
+        <span id="restBadgeText">GIỜ NGHỈ NGƠI & THƯ GIÃN</span>
+      </div>
 
-    <!-- Centerpiece Exercise / Ring -->
-    <div class="rest-centerpiece-wrapper" id="restCenterpieceWrapper"></div>
+      <!-- Breathing Ring with Center Countdown Clock -->
+      <div class="zen-clock-circle" id="zenClockCircle">
+        <div class="zen-clock-digits" id="restClockDigits">10:00</div>
+        <div class="zen-clock-sub" id="restClockSub">thời gian nghỉ ngơi</div>
+      </div>
 
-    <!-- Rest Countdown Digits -->
-    <div class="rest-clock-container">
-      <div class="rest-countdown-clock" id="restClockDigits">10:00</div>
-      <div class="rest-clock-sub" id="restClockSub">thời gian nghỉ còn lại</div>
-    </div>
-    
-    <!-- Title & Scientific Rationale -->
-    <div class="rest-title-text" id="restTitleText">GIỜ NGHỈ NGƠI & PHỤC HỒI</div>
-    <div class="rest-subtitle-tip" id="restSubtitleTip"></div>
+      <!-- Clean Warm Title & Human Prompt -->
+      <div class="zen-title-text" id="restTitleText">Thư Giãn Mắt & Thả Lỏng Cơ Thể</div>
+      <div class="zen-subtitle-tip" id="restSubtitleTip">Ca học hoàn thành tốt lắm! Hãy đứng dậy vươn vai, uống một ngụm nước và để đôi mắt được nghỉ ngơi nhé.</div>
 
-    <!-- 3 Tailored Action Guidance Cards -->
-    <div class="rest-guidance-cards" id="restGuidanceCards"></div>
+      <!-- 3 Human Mindfulness Cards (Clean, dignified, zero medical lectures) -->
+      <div class="zen-guidance-cards" id="restGuidanceCards">
+        <div class="zen-guide-card">
+          <div class="zen-guide-icon" style="color:#38bdf8;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M3 12h3m12 0h3M12 3v3m0 12v3"/><circle cx="12" cy="12" r="9"/></svg>
+          </div>
+          <div class="zen-guide-body">
+            <div class="zen-guide-title">Nhìn xa ngoài cửa sổ</div>
+            <div class="zen-guide-desc">Hướng tầm mắt ra xa trên 6 mét để cơ mắt được thả lỏng hoàn toàn.</div>
+          </div>
+        </div>
+        <div class="zen-guide-card">
+          <div class="zen-guide-icon" style="color:#34d399;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+          </div>
+          <div class="zen-guide-body">
+            <div class="zen-guide-title">Uống nước & chớp mắt</div>
+            <div class="zen-guide-desc">Đứng dậy uống một ngụm nước ấm, chớp mắt nhẹ nhàng để cấp ẩm cho mắt.</div>
+          </div>
+        </div>
+        <div class="zen-guide-card">
+          <div class="zen-guide-icon" style="color:#a78bfa;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+          </div>
+          <div class="zen-guide-body">
+            <div class="zen-guide-title">Vươn vai & hít thở sâu</div>
+            <div class="zen-guide-desc">Thả lỏng vai gáy, hít thở sâu vài nhịp để giải phóng áp lực tích tụ.</div>
+          </div>
+        </div>
+      </div>
 
-    <!-- Action Buttons Row -->
-    <div class="rest-actions-row" id="restActionsRow"></div>
+      <!-- Action Buttons Row -->
+      <div class="zen-actions-row" id="restActionsRow">
+        <button class="btn-zen-action ghost" onclick="addBreakMinutes(5)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+          <span>Nghỉ thêm 5 phút</span>
+        </button>
+        <button class="btn-zen-action primary" onclick="earlyFinishBreak()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <span>Vào ca tiếp theo</span>
+        </button>
+      </div>
 
-    <!-- Emergency Friction Unlock Box (3.0s Pointer Captured) -->
-    <div class="emergency-unlock-box">
-      <button class="btn-emergency-unlock" id="btnEmergencyUnlock"
-        onpointerdown="handleEmergencyPointerDown(event)"
-        onpointerup="handleEmergencyPointerUp(event)"
-        onpointercancel="handleEmergencyPointerUp(event)">
-        <div class="unlock-progress-fill" id="unlockProgressFill"></div>
-        <span class="unlock-btn-text" id="unlockBtnText">Mở khóa khẩn cấp (Giữ 3s)</span>
-      </button>
-      <span class="emergency-hint">Nhấn và giữ liên tục 3 giây nếu bạn có việc khẩn cấp cần thao tác ngay</span>
+      <!-- Emergency Friction Unlock Box (3.0s Pointer Captured) -->
+      <div class="emergency-unlock-box" style="margin-top:18px;">
+        <button class="btn-emergency-unlock" id="btnEmergencyUnlock"
+          onpointerdown="handleEmergencyPointerDown(event)"
+          onpointerup="handleEmergencyPointerUp(event)"
+          onpointercancel="handleEmergencyPointerUp(event)">
+          <div class="unlock-progress-fill" id="unlockProgressFill"></div>
+          <span class="unlock-btn-text" id="unlockBtnText">Mở khóa khẩn cấp (Giữ 3s)</span>
+        </button>
+        <span class="emergency-hint">Nhấn và giữ liên tục 3 giây nếu có việc đột xuất cần dùng máy</span>
+      </div>
     </div>
   </div>
 
@@ -6098,7 +6396,7 @@ body[data-fx="pixel"] .ambient-pill.active {
         <div style="color:#38bdf8; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
         <div>
           <div style="font-size:12px; font-weight:600; color:#e2e8f0;">Chớp mắt & Uống nước</div>
-          <div style="font-size:11px; color:#94a3b8;">Uống 1 cốc nước ấm và chớp mắt chậm để cấp ẩm giác mạc</div>
+          <div style="font-size:11px; color:#94a3b8;">Uống 1 cốc nước ấm và chớp mắt chậm để giữ ẩm cho mắt</div>
         </div>
       </div>
       <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 14px; display:flex; align-items:center; gap:12px;">
@@ -6237,7 +6535,7 @@ body[data-fx="pixel"] .ambient-pill.active {
         pyCall("toggle_mini_mode");
       } else if (e.code === "F9") {
         e.preventDefault();
-        openCustomTimerModal("movie");
+        openLeisureModal();
       }
     });
 
@@ -6538,7 +6836,7 @@ body[data-fx="pixel"] .ambient-pill.active {
       }
     }
 
-    function openCustomTimerModal(defaultMode = "focus") {
+    function openCustomTimerModal() {
       const modal = document.getElementById("customTimerModal");
       modal.classList.add("active");
       document.getElementById("customMinutesInput").value = Math.round(totalTargetSeconds / 60) || 50;
@@ -6546,11 +6844,54 @@ body[data-fx="pixel"] .ambient-pill.active {
       if (breakInput) {
         breakInput.value = (currentAppConfig && currentAppConfig.break_minutes) || 10;
       }
+      setTimeout(() => {
+        const inp = document.getElementById("customMinutesInput");
+        if (inp) { inp.focus(); inp.select(); }
+      }, 50);
     }
 
     function closeCustomTimerModal() {
       const modal = document.getElementById("customTimerModal");
       modal.classList.remove("active");
+    }
+
+    function setPresetCycle(studyMins, breakMins) {
+      const sInp = document.getElementById("customMinutesInput");
+      const bInp = document.getElementById("customBreakMinutesInput");
+      if (sInp) sInp.value = studyMins;
+      if (bInp) bInp.value = breakMins;
+    }
+
+    function openLeisureModal() {
+      const modal = document.getElementById("leisureTimerModal");
+      if (modal) {
+        modal.classList.add("active");
+        const inp = document.getElementById("leisureCustomMinutesInput");
+        if (inp) {
+          setTimeout(() => { inp.focus(); inp.select(); }, 50);
+        }
+      }
+    }
+
+    function closeLeisureModal() {
+      const modal = document.getElementById("leisureTimerModal");
+      if (modal) modal.classList.remove("active");
+    }
+
+    function startLeisureTimer(minutes) {
+      closeLeisureModal();
+      document.querySelectorAll(".duration-pill").forEach(p => p.classList.remove("active"));
+      currentMode = "movie";
+      document.body.classList.add("movie-mode-active");
+      pyCall("set_custom_timer", minutes, "movie");
+      showToast(`🌿 Đã hẹn giờ giải lao: ${minutes} phút`);
+      updateHeroActiveTarget();
+    }
+
+    function startLeisureTimerFromInput() {
+      const inp = document.getElementById("leisureCustomMinutesInput");
+      const mins = parseInt(inp ? inp.value : "45", 10) || 45;
+      startLeisureTimer(mins);
     }
 
     function applyCustomTimerMinutes() {
@@ -6628,7 +6969,7 @@ body[data-fx="pixel"] .ambient-pill.active {
         headline.innerText = "KHÁ TỐT • CẦN GIẢM MỞ TAB NGOÀI";
         headline.style.color = "var(--amber)";
       } else {
-        headline.innerText = "XAO NHÃNG NHIỀU • CẦN RÈN KỶ LUẬT THÉP";
+        headline.innerText = "CẦN CẢI THIỆN ĐỘ TẬP TRUNG";
         headline.style.color = "var(--rose)";
       }
 
@@ -7269,183 +7610,28 @@ function copyPuritySummary() {
       const isEyeCare = (currentAppMode === "eyecare");
       modal.className = `rest-modal-overlay active ${isEyeCare ? 'mode-eyecare' : 'mode-study'}`;
 
-      if (clockDigits) {
-        clockDigits.className = `rest-countdown-clock ${isEyeCare ? 'emerald' : 'amber'}`;
-      }
-
-      // Populate Mode-Specific Badge, Centerpiece, Rationale & Guide Cards
       const badgeEl = document.getElementById("restModeBadge");
-      const centerpieceEl = document.getElementById("restCenterpieceWrapper");
       const titleEl = document.getElementById("restTitleText");
       const subEl = document.getElementById("restSubtitleTip");
-      const guidesEl = document.getElementById("restGuidanceCards");
-      const actionsEl = document.getElementById("restActionsRow");
 
       if (isEyeCare) {
         if (badgeEl) {
-          badgeEl.style.background = "rgba(16, 185, 129, 0.12)";
-          badgeEl.style.border = "1px solid rgba(16, 185, 129, 0.35)";
-          badgeEl.style.color = "#34d399";
           badgeEl.innerHTML = `
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            <span>TRẠM NGHỈ DƯỠNG MẮT • LIỆU TRÌNH 20-20-20</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>BẢO VỆ MẮT • GIỜ NGHỈ NGƠI</span>
           `;
         }
-
-        if (centerpieceEl && !centerpieceEl.querySelector(".infinity-track-box")) {
-          centerpieceEl.innerHTML = `
-            <div class="infinity-track-box">
-              <svg width="220" height="85" viewBox="0 0 220 85" fill="none">
-                <path d="M 55,42 C 55,18 95,18 110,42 C 125,66 165,66 165,42 C 165,18 125,18 110,42 C 95,66 55,66 55,42 Z" stroke="rgba(16, 185, 129, 0.22)" stroke-width="3" stroke-linecap="round"/>
-                <circle r="7" fill="#34d399">
-                  <animateMotion dur="5.5s" repeatCount="indefinite" path="M 55,42 C 55,18 95,18 110,42 C 125,66 165,66 165,42 C 165,18 125,18 110,42 C 95,66 55,66 55,42 Z" />
-                </circle>
-              </svg>
-              <div class="centerpiece-hint" style="color:#6ee7b7;">Dõi ánh mắt theo đốm sáng xanh vô cực để xoa dịu cơ thể mi</div>
-            </div>
-          `;
-        }
-
-        if (titleEl) titleEl.innerText = "THƯ GIÃN GIÁC MẠC & PHỤC HỒI THỊ LỰC";
-        if (subEl) subEl.innerText = "Đã hoàn thành 50 phút dùng máy tính. Hãy rời mắt khỏi màn hình để bảo vệ màng nước mắt và giải tỏa co thắt cơ điều tiết.";
-
-        if (guidesEl && !guidesEl.getAttribute("data-mode-set") || guidesEl.getAttribute("data-mode-set") !== "eyecare") {
-          guidesEl.setAttribute("data-mode-set", "eyecare");
-          guidesEl.innerHTML = `
-            <div class="rest-guide-card">
-              <div class="rest-guide-icon" style="color:#34d399;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
-              </div>
-              <div>
-                <div class="rest-guide-title">Úp Lòng Bàn Tay Ấm (Palming)</div>
-                <div class="rest-guide-desc">Xoa 2 bàn tay 15s cho ấm rồi khum tay úp nhẹ lên mắt 30s. Hơi ấm và bóng tối sẽ làm dịu tế bào cảm quang.</div>
-              </div>
-            </div>
-            <div class="rest-guide-card">
-              <div class="rest-guide-icon" style="color:#38bdf8;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M3 12h3m12 0h3M12 3v3m0 12v3"/><circle cx="12" cy="12" r="9"/></svg>
-              </div>
-              <div>
-                <div class="rest-guide-title">Quy Tắc 20-20-20 Thần Thánh</div>
-                <div class="rest-guide-desc">Phóng tầm mắt ra xa trên 6 mét ngoài ban công hoặc cửa sổ để cơ thể mi xả hết trạng thái căng cứng.</div>
-              </div>
-            </div>
-            <div class="rest-guide-card">
-              <div class="rest-guide-icon" style="color:#06b6d4;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
-              </div>
-              <div>
-                <div class="rest-guide-title">Chớp Mắt Sâu 10 Lần & Uống Nước Ấm</div>
-                <div class="rest-guide-desc">Chớp mắt thật chậm để tráng đều dịch ẩm lên giác mạc, uống 1 cốc nước ấm giúp thanh lọc và phục hồi độ ẩm.</div>
-              </div>
-            </div>
-          `;
-        }
-
-        if (actionsEl) {
-          actionsEl.innerHTML = `
-            <button class="btn-rest-action emerald" onclick="addBreakMinutes(5)">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
-              <span>Nghỉ thêm 5 phút</span>
-            </button>
-            <button class="btn-rest-action ghost" onclick="earlyFinishBreak()">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-              <span>Vào ca mới ngay</span>
-            </button>
-          `;
-        }
-
-        clearInterval(breathingPhaseTimer);
-
+        if (titleEl) titleEl.innerText = "Thư Giãn Mắt & Thả Lỏng Cơ Thể";
+        if (subEl) subEl.innerText = "Đã hoàn thành thời gian làm việc. Hãy phóng tầm mắt ra xa và để đôi mắt được nghỉ ngơi nhé.";
       } else {
-        // Study Mode
         if (badgeEl) {
-          badgeEl.style.background = "rgba(245, 158, 11, 0.12)";
-          badgeEl.style.border = "1px solid rgba(245, 158, 11, 0.35)";
-          badgeEl.style.color = "#fbbf24";
           badgeEl.innerHTML = `
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-            <span>KHÔNG GIAN HỒI PHỤC NĂNG LƯỢNG NÃO BỘ</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/></svg>
+            <span>GIỜ NGHỈ NGƠI & HỒI PHỤC</span>
           `;
         }
-
-        if (centerpieceEl && !centerpieceEl.querySelector(".breathing-pulse-ring")) {
-          centerpieceEl.innerHTML = `
-            <div class="breathing-pulse-ring">
-              <div class="breathing-phase-guide" id="breathingPhaseGuide">Hít sâu bằng mũi (4s)...</div>
-            </div>
-            <div class="centerpiece-hint" style="color:#fcd34d; margin-top:6px;">Chu kỳ hít thở 4-7-8 giúp xoa dịu hệ thần kinh giao cảm</div>
-          `;
-        }
-
-        if (titleEl) titleEl.innerText = "GIỜ NGHỈ NGƠI & TÁI TẠO DOPAMINE";
-        if (subEl) subEl.innerText = "Vừa trải qua ca học tập trung cao độ. Hãy ngắt kết nối với mọi màn hình để não bộ củng cố kiến thức vào trí nhớ dài hạn.";
-
-        if (guidesEl && !guidesEl.getAttribute("data-mode-set") || guidesEl.getAttribute("data-mode-set") !== "study") {
-          guidesEl.setAttribute("data-mode-set", "study");
-          guidesEl.innerHTML = `
-            <div class="rest-guide-card">
-              <div class="rest-guide-icon" style="color:#fbbf24;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
-              </div>
-              <div>
-                <div class="rest-guide-title">Rời Bàn Học & Đi Bộ 50 Bước</div>
-                <div class="rest-guide-desc">Đứng dậy khỏi ghế, vươn vai và đi bộ nhẹ quanh phòng để bơm máu và oxy tươi mới lên bán cầu não.</div>
-              </div>
-            </div>
-            <div class="rest-guide-card">
-              <div class="rest-guide-icon" style="color:#f87171;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
-              </div>
-              <div>
-                <div class="rest-guide-title">Bảo Vệ Não Khỏi Dopamine Rác</div>
-                <div class="rest-guide-desc">Tuyệt đối không lướt TikTok/Shorts trong giờ nghỉ để não bộ có khoảng tĩnh thực thụ, tránh cạn kiệt ý chí.</div>
-              </div>
-            </div>
-            <div class="rest-guide-card">
-              <div class="rest-guide-icon" style="color:#a78bfa;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M5.5 21v-2a6.5 6.5 0 0 1 13 0v2"/></svg>
-              </div>
-              <div>
-                <div class="rest-guide-title">Xoay Nhẹ Khớp Cổ & Thả Lỏng Vai</div>
-                <div class="rest-guide-desc">Nghiêng nhẹ đầu sang 2 bên và xoay bả vai 10 vòng để giải tỏa chèn ép dây thần kinh sau thời gian dài cúi học.</div>
-              </div>
-            </div>
-          `;
-        }
-
-        if (actionsEl) {
-          actionsEl.innerHTML = `
-            <button class="btn-rest-action amber" onclick="earlyFinishBreak()">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-              <span>Sẵn sàng ca học tiếp theo</span>
-            </button>
-            <button class="btn-rest-action ghost" onclick="addBreakMinutes(5)">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
-              <span>Nghỉ thêm 5 phút</span>
-            </button>
-          `;
-        }
-
-        // Live 4-7-8 breathing phase cycle
-        if (!breathingPhaseTimer) {
-          breathingPhaseIndex = 0;
-          const phases = [
-            { text: "Hít sâu bằng mũi (4s)...", dur: 4 },
-            { text: "Giữ hơi thư thái (7s)...", dur: 7 },
-            { text: "Thở chậm bằng miệng (8s)...", dur: 8 }
-          ];
-          let curDur = phases[0].dur;
-          breathingPhaseTimer = setInterval(() => {
-            curDur--;
-            if (curDur <= 0) {
-              breathingPhaseIndex = (breathingPhaseIndex + 1) % phases.length;
-              curDur = phases[breathingPhaseIndex].dur;
-              const guideEl = document.getElementById("breathingPhaseGuide");
-              if (guideEl) guideEl.innerText = phases[breathingPhaseIndex].text;
-            }
-          }, 1000);
-        }
+        if (titleEl) titleEl.innerText = "Thư Giãn & Nạp Lại Năng Lượng";
+        if (subEl) subEl.innerText = "Ca học hoàn thành tốt lắm! Hãy đứng dậy vươn vai, uống ngụm nước và để đầu óc được nghỉ ngơi nhé.";
       }
     }
 
@@ -9561,24 +9747,24 @@ function copyPuritySummary() {
         });
       }
 
-      // Whole 5-Petal Blossoms on Mini HUD (Curated 4 graceful floating flowers)
+      // Whole 5-Petal Blossoms on Mini HUD (Curated 6 graceful floating flowers)
       this.sakuraBlossoms = [];
-      const miniBlossomSizes = [11.0, 9.5, 11.8, 10.0];
-      for (let i = 0; i < 4; i++) {
-        const bx = Math.random() * ((this.width || 380) + 40) - 20;
+      const miniBlossomSizes = [10.5, 9.0, 11.5, 9.8, 10.8, 9.2];
+      for (let i = 0; i < 6; i++) {
+        const bx = 20 + (i / 6) * ((this.width || 380) - 40) + (Math.random() * 20 - 10);
         this.sakuraBlossoms.push({
           baseX: bx,
           x: bx,
-          y: Math.random() * (this.height || 64),
+          y: Math.random() * ((this.height || 64) - 16) + 8,
           size: miniBlossomSizes[i],
-          speedY: Math.random() * 0.10 + 0.18,
-          driftX: Math.random() * 0.08 + 0.09,
+          speedY: Math.random() * 0.08 + 0.16,
+          driftX: Math.random() * 0.07 + 0.08,
           swayAmp: Math.random() * 1.5 + 2.0,
           swayFreq: Math.random() * 0.0003 + 0.0004,
           angle: Math.random() * Math.PI * 2,
           rotSpeed: (Math.random() - 0.4) * 0.0006 + 0.0003,
           phase: Math.random() * Math.PI * 2,
-          alpha: Math.random() * 0.10 + 0.82
+          alpha: Math.random() * 0.12 + 0.80
         });
       }
 

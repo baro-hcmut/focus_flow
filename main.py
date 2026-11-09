@@ -238,7 +238,7 @@ class PomodoroApp:
         self.is_mini_mode = False
         self.is_fullscreen_overlay = False
         self.current_distracted_hwnd = None
-        self.app_mode = "study" # "study" (Tập trung học) or "eyecare" (Nghỉ mắt 50/10)
+        self.app_mode = "study" # "study" (Học tập & Làm việc) or "eyecare" (Bảo vệ mắt)
         self.window = None
 
         # Productivity Modules
@@ -359,7 +359,7 @@ class PomodoroApp:
         self.eval_js(code)
 
     def set_app_mode(self, mode="study"):
-        self.app_mode = mode # "study" (Tập trung học) or "eyecare" (Nghỉ mắt 50/10)
+        self.app_mode = mode # "study" (Học tập & Làm việc) or "eyecare" (Bảo vệ mắt)
         if mode == "eyecare":
             self.focus_duration = 50 * 60
             self.break_duration = 10 * 60
