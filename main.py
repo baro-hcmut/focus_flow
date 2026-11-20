@@ -36,6 +36,10 @@ import threading
 import webview
 import urllib.request
 import webbrowser
+import tempfile
+import shutil
+import zipfile
+import subprocess
 
 # Ensure src/ directory is in python search path
 SRC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'src')
@@ -250,6 +254,7 @@ class PomodoroApp:
         self.checklist = MicroChecklist()
         self.brain_dump = BrainDumpManager()
         self.spotlight = None
+        self._is_updating = False
 
         self.distraction_monitor = DistractionMonitor(
             brain_dump_manager=self.brain_dump,
@@ -689,6 +694,149 @@ class PomodoroApp:
         except Exception:
             pass
 
+    def start_in_app_update(self, download_url=None):
+        if getattr(self, '_is_updating', False):
+            return {"status": "busy", "message": "Đang trong quá trình cập nhật..."}
+        self._is_updating = True
+        threading.Thread(target=self._run_in_app_update, args=(download_url,), daemon=True).start()
+        return {"status": "started"}
+
+    def _run_in_app_update(self, download_url=None):
+        try:
+            target_url = download_url
+            if not target_url or not str(target_url).startswith("http"):
+                res = check_github_update()
+                target_url = res.get("download_url") or res.get("release_url")
+
+            if not target_url or not str(target_url).startswith("http"):
+                raise ValueError("Không tìm thấy đường dẫn tải gói cập nhật.")
+
+            temp_root = os.path.join(tempfile.gettempdir(), "focus_flow_inapp_update")
+            if os.path.exists(temp_root):
+                try:
+                    shutil.rmtree(temp_root, ignore_errors=True)
+                except Exception:
+                    pass
+            os.makedirs(temp_root, exist_ok=True)
+            zip_path = os.path.join(temp_root, "update.zip")
+
+            req = urllib.request.Request(target_url, headers={
+                "User-Agent": f"FocusFlow-App/{APP_VERSION}",
+                "Accept": "*/*"
+            })
+
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                content_len_hdr = resp.headers.get('Content-Length')
+                total_size = int(content_len_hdr) if content_len_hdr and content_len_hdr.isdigit() else 0
+                downloaded = 0
+                chunk_size = 65536
+                last_ui_update = 0
+
+                with open(zip_path, 'wb') as f:
+                    while True:
+                        chunk = resp.read(chunk_size)
+                        if not chunk:
+                            break
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        now = time.time()
+                        if total_size > 0:
+                            pct = (downloaded / total_size) * 100.0
+                        else:
+                            pct = 50.0
+
+                        if now - last_ui_update > 0.08:
+                            last_ui_update = now
+                            mb_down = downloaded / (1024 * 1024)
+                            mb_total = total_size / (1024 * 1024) if total_size > 0 else 0
+                            self.eval_js(f"window.onUpdateProgress && window.onUpdateProgress({pct:.1f}, {mb_down:.1f}, {mb_total:.1f}, 'Đang tải bản cập nhật...');")
+
+            mb_down = downloaded / (1024 * 1024)
+            self.eval_js(f"window.onUpdateProgress && window.onUpdateProgress(100.0, {mb_down:.1f}, {mb_down:.1f}, 'Đang giải nén tập tin...');")
+
+            extract_dir = os.path.join(temp_root, "extracted")
+            os.makedirs(extract_dir, exist_ok=True)
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                zip_ref.extractall(extract_dir)
+
+            payload_dir = extract_dir
+            if not os.path.exists(os.path.join(payload_dir, "Focus Flow.exe")):
+                for root, dirs, files in os.walk(extract_dir):
+                    if "Focus Flow.exe" in files:
+                        payload_dir = root
+                        break
+
+            if getattr(sys, 'frozen', False):
+                app_dir = os.path.dirname(sys.executable)
+                exe_name = os.path.basename(sys.executable)
+            else:
+                app_dir = os.path.dirname(os.path.abspath(__file__))
+                exe_name = "Focus Flow.exe"
+
+            current_pid = os.getpid()
+            bat_path = os.path.join(tempfile.gettempdir(), f"focus_flow_updater_{current_pid}.bat")
+
+            bat_content = f"""@echo off
+chcp 65001 >nul
+title Cập nhật Focus Flow...
+
+:wait_loop
+powershell -NoProfile -Command "if (Get-Process -Id {current_pid} -ErrorAction SilentlyContinue) {{ exit 1 }} else {{ exit 0 }}"
+if %ERRORLEVEL% EQU 1 (
+    timeout /t 1 /nobreak >nul
+    goto wait_loop
+)
+timeout /t 1 /nobreak >nul
+
+set "BACKUP_DIR=%TEMP%\\focus_flow_backup_{current_pid}"
+if not exist "%BACKUP_DIR%" mkdir "%BACKUP_DIR%"
+if exist "{app_dir}\\config.json" copy /y "{app_dir}\\config.json" "%BACKUP_DIR%\\" >nul
+
+xcopy /s /e /y /q "{payload_dir}\\*" "{app_dir}\\" >nul
+
+if exist "%BACKUP_DIR%\\config.json" copy /y "%BACKUP_DIR%\\config.json" "{app_dir}\\" >nul
+rmdir /s /q "%BACKUP_DIR%" 2>nul
+
+powershell -NoProfile -Command "Get-ChildItem -Path '{app_dir}' -Recurse | Unblock-File -ErrorAction SilentlyContinue" 2>nul
+
+start "" "{app_dir}\\{exe_name}"
+
+timeout /t 2 /nobreak >nul
+rmdir /s /q "{temp_root}" 2>nul
+(goto) 2>nul & del "%~f0"
+"""
+            with open(bat_path, "w", encoding="utf-8") as f:
+                f.write(bat_content)
+
+            self.eval_js("window.onUpdateProgress && window.onUpdateProgress(100.0, 0, 0, 'Cập nhật thành công! Đang khởi động lại...');")
+            time.sleep(0.7)
+
+            creation_flags = 0
+            if hasattr(subprocess, 'CREATE_NO_WINDOW'):
+                creation_flags |= subprocess.CREATE_NO_WINDOW
+            if hasattr(subprocess, 'DETACHED_PROCESS'):
+                creation_flags |= subprocess.DETACHED_PROCESS
+
+            subprocess.Popen(
+                ["cmd.exe", "/c", bat_path],
+                creationflags=creation_flags,
+                close_fds=True
+            )
+
+            try:
+                self.is_running = False
+                if os.path.exists(PID_FILE):
+                    os.remove(PID_FILE)
+            except Exception:
+                pass
+
+            os._exit(0)
+
+        except Exception as e:
+            self._is_updating = False
+            err_msg = str(e).replace("'", "\\'").replace('"', '\\"').replace('\n', ' ')
+            self.eval_js(f"window.onUpdateError && window.onUpdateError('{err_msg}');")
+
     def on_close(self):
         self.is_running = False
         try:
@@ -919,6 +1067,9 @@ class Api:
 
     def check_for_updates(self):
         return check_github_update()
+
+    def start_in_app_update(self, download_url=None):
+        return self._app.start_in_app_update(download_url)
 
     def open_external_url(self, url):
         if url and (url.startswith("https://") or url.startswith("http://")):

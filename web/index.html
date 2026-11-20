@@ -2312,6 +2312,18 @@
       animation: pulseUpdate 2s infinite ease-in-out;
     }
 
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .update-spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(56, 189, 248, 0.25);
+      border-top-color: #38bdf8;
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+
     /* Purity Report Specific */
     .purity-hero-banner {
       display: flex;
@@ -6198,17 +6210,17 @@ body[data-fx="pixel"] .ambient-pill.active {
           </div>
           <div>
             <div class="modal-title-text" id="updateModalTitle">ĐÃ CÓ BẢN CẬP NHẬT MỚI</div>
-            <div class="modal-sub-text" id="updateModalSubtitle">Phát hiện phiên bản mới trên GitHub Releases</div>
+            <div class="modal-sub-text" id="updateModalSubtitle">Cập nhật tự động 1-Click trực tiếp trong phần mềm</div>
           </div>
         </div>
-        <button class="btn-close-modal" onclick="closeUpdateModal()">✕</button>
+        <button class="btn-close-modal" id="btnCloseUpdateModal" onclick="closeUpdateModal()">✕</button>
       </div>
 
       <div style="display:flex; flex-direction:column; gap:12px; padding:6px 0;">
         <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255, 255, 255, 0.03); border:1px solid rgba(255, 255, 255, 0.08); padding:10px 14px; border-radius:8px;">
           <div style="display:flex; align-items:center; gap:8px;">
             <span style="font-size:12px; color:var(--text-muted);">Phiên bản mới:</span>
-            <span id="updateModalNewVer" style="font-size:14px; font-weight:700; color:#38bdf8;">v1.1</span>
+            <span id="updateModalNewVer" style="font-size:14px; font-weight:700; color:#38bdf8;">v2.0.0</span>
           </div>
           <div style="display:flex; align-items:center; gap:6px;">
             <span style="font-size:11.5px; color:var(--text-muted);">Bản hiện tại:</span>
@@ -6217,18 +6229,47 @@ body[data-fx="pixel"] .ambient-pill.active {
         </div>
 
         <div style="font-size:12px; font-weight:600; color:var(--text-main); margin-top:2px;">Điểm mới trong bản cập nhật này:</div>
-        <div id="updateModalNotesContent" style="background:#090b10; border:1px solid rgba(255, 255, 255, 0.08); border-radius:8px; padding:12px; max-height:180px; overflow-y:auto; font-size:11.5px; line-height:1.6; color:#cbd5e1; white-space:pre-wrap;">
+        <div id="updateModalNotesContent" style="background:#090b10; border:1px solid rgba(255, 255, 255, 0.08); border-radius:8px; padding:12px; max-height:160px; overflow-y:auto; font-size:11.5px; line-height:1.6; color:#cbd5e1; white-space:pre-wrap;">
+        </div>
+
+        <!-- TIẾN TRÌNH CẬP NHẬT TỰ ĐỘNG (PROGRESS BAR) -->
+        <div id="updateProgressContainer" style="display:none; flex-direction:column; gap:8px; background:rgba(2, 132, 199, 0.08); border:1px solid rgba(56, 189, 248, 0.3); border-radius:10px; padding:12px 14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div class="update-spinner" id="updateSpinner"></div>
+              <span id="updateProgressStatus" style="font-size:12px; font-weight:600; color:#e0f2fe;">Đang tải bản cập nhật...</span>
+            </div>
+            <span id="updateProgressPercent" style="font-size:12.5px; font-weight:700; color:#38bdf8;">0%</span>
+          </div>
+          <div style="width:100%; height:8px; background:rgba(255, 255, 255, 0.1); border-radius:4px; overflow:hidden;">
+            <div id="updateProgressBarFill" style="width:0%; height:100%; background:linear-gradient(90deg, #0284c7, #38bdf8, #06b6d4); transition:width 0.15s ease-out; border-radius:4px;"></div>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:11px; color:#94a3b8;">
+            <span id="updateProgressDetail">Đang khởi tạo...</span>
+            <span style="color:#38bdf8;">⚡ Tự động cài đặt & khởi động lại</span>
+          </div>
+        </div>
+
+        <!-- HỘP THÔNG BÁO LỖI -->
+        <div id="updateErrorContainer" style="display:none; background:rgba(239, 68, 68, 0.12); border:1px solid rgba(239, 68, 68, 0.35); border-radius:8px; padding:10px 12px; font-size:11.5px; color:#fca5a5;">
+          <div style="font-weight:600; margin-bottom:2px;">⚠️ Không thể cập nhật tự động:</div>
+          <div id="updateErrorMessage" style="font-size:11px; line-height:1.4;"></div>
         </div>
       </div>
 
       <div class="modal-footer-row" style="display:flex; justify-content:space-between; align-items:center; padding-top:10px; border-top:1px solid var(--border); margin-top:4px;">
-        <button class="btn-hero-ghost" style="height:34px; padding:0 14px; font-size:12px;" onclick="closeUpdateModal()">
+        <button class="btn-hero-ghost" id="btnUpdateLater" style="height:34px; padding:0 14px; font-size:12px;" onclick="closeUpdateModal()">
           <span>Để sau</span>
         </button>
-        <button class="btn-hero-primary" id="btnDownloadUpdate" style="height:34px; padding:0 16px; font-size:12px; display:inline-flex; align-items:center; gap:6px; background:linear-gradient(135deg, #0284c7, #06b6d4); color:#fff; border:none; border-radius:6px; cursor:pointer;" onclick="downloadUpdateAction()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          <span style="font-weight:600;">Tải Bản Mới (1-Click)</span>
-        </button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-hero-ghost" id="btnUpdateManualFallback" style="display:none; height:34px; padding:0 12px; font-size:11.5px;" onclick="openManualBrowserDownload()" title="Tải thủ công từ trình duyệt">
+            <span>Mở trình duyệt</span>
+          </button>
+          <button class="btn-hero-primary" id="btnDownloadUpdate" style="height:34px; padding:0 16px; font-size:12px; display:inline-flex; align-items:center; gap:6px; background:linear-gradient(135deg, #0284c7, #06b6d4); color:#fff; border:none; border-radius:6px; cursor:pointer;" onclick="startInAppUpdate()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span id="btnDownloadUpdateText" style="font-weight:600;">Cập Nhật Ngay (1-Click)</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -11657,35 +11698,166 @@ start() {
     }
   };
 
-  function openUpdateModal() {
-    if (!latestUpdateInfo) return;
+  let isUpdatingInProgress = false;
+
+  function openUpdateModal(force = false) {
+    if (!latestUpdateInfo && !force) return;
     const modal = document.getElementById('updateModalBackdrop');
     if (!modal) return;
 
+    isUpdatingInProgress = false;
+
+    // Reset UI state
+    const progressBox = document.getElementById('updateProgressContainer');
+    const errBox = document.getElementById('updateErrorContainer');
+    const btnDownload = document.getElementById('btnDownloadUpdate');
+    const btnDownloadText = document.getElementById('btnDownloadUpdateText');
+    const btnLater = document.getElementById('btnUpdateLater');
+    const btnClose = document.getElementById('btnCloseUpdateModal');
+    const btnManual = document.getElementById('btnUpdateManualFallback');
+
+    if (progressBox) progressBox.style.display = 'none';
+    if (errBox) errBox.style.display = 'none';
+    if (btnDownload) {
+      btnDownload.disabled = false;
+      btnDownload.style.opacity = '1';
+      btnDownload.style.pointerEvents = 'auto';
+    }
+    if (btnDownloadText) {
+      btnDownloadText.textContent = (force && latestUpdateInfo && latestUpdateInfo.latest_version === latestUpdateInfo.current_version) 
+        ? 'Cài Lại Bản Này (1-Click)' 
+        : 'Cập Nhật Ngay (1-Click)';
+    }
+    if (btnLater) btnLater.style.display = 'inline-block';
+    if (btnClose) btnClose.style.display = 'block';
+    if (btnManual) btnManual.style.display = 'none';
+
     const newVer = document.getElementById('updateModalNewVer');
     const curVer = document.getElementById('updateModalCurVer');
-    if (newVer) newVer.textContent = latestUpdateInfo.latest_version || 'Mới';
-    if (curVer) curVer.textContent = latestUpdateInfo.current_version || 'v2.0.0';
+    if (newVer) newVer.textContent = (latestUpdateInfo && latestUpdateInfo.latest_version) || 'v2.0.0';
+    if (curVer) curVer.textContent = (latestUpdateInfo && latestUpdateInfo.current_version) || 'v2.0.0';
 
     const notesBox = document.getElementById('updateModalNotesContent');
     if (notesBox) {
-      notesBox.innerHTML = formatChangelogHtml(latestUpdateInfo.release_notes);
+      notesBox.innerHTML = (latestUpdateInfo && latestUpdateInfo.release_notes) 
+        ? formatChangelogHtml(latestUpdateInfo.release_notes)
+        : '<p style="color:#94a3b8;">Bản cập nhật tối ưu hóa hiệu năng, cải tiến giao diện và bổ sung tính năng cập nhật tự động 1-click trực tiếp trong phần mềm.</p>';
     }
 
     modal.classList.add('active');
   }
 
   function closeUpdateModal() {
+    if (isUpdatingInProgress) {
+      showToast('⏳ Bản cập nhật đang được tải, vui lòng không tắt...');
+      return;
+    }
     const modal = document.getElementById('updateModalBackdrop');
     if (modal) modal.classList.remove('active');
   }
 
-  function downloadUpdateAction() {
+  function startInAppUpdate() {
+    if (isUpdatingInProgress) return;
+    if (!latestUpdateInfo || !latestUpdateInfo.download_url) {
+      // If download_url not yet available, fallback to manual or check
+      pyCall('check_for_updates').then(res => {
+        if (res && res.download_url) {
+          latestUpdateInfo = res;
+          startInAppUpdate();
+        } else {
+          showToast('⚠️ Không tìm thấy đường dẫn tải gói cập nhật.');
+        }
+      });
+      return;
+    }
+
+    isUpdatingInProgress = true;
+
+    const progressBox = document.getElementById('updateProgressContainer');
+    const errBox = document.getElementById('updateErrorContainer');
+    const btnDownload = document.getElementById('btnDownloadUpdate');
+    const btnLater = document.getElementById('btnUpdateLater');
+    const btnClose = document.getElementById('btnCloseUpdateModal');
+    const btnManual = document.getElementById('btnUpdateManualFallback');
+
+    if (progressBox) progressBox.style.display = 'flex';
+    if (errBox) errBox.style.display = 'none';
+    if (btnDownload) {
+      btnDownload.disabled = true;
+      btnDownload.style.opacity = '0.6';
+      btnDownload.style.pointerEvents = 'none';
+    }
+    if (btnLater) btnLater.style.display = 'none';
+    if (btnClose) btnClose.style.display = 'none';
+    if (btnManual) btnManual.style.display = 'none';
+
+    window.onUpdateProgress(0, 0, 0, 'Đang chuẩn bị tải bản cập nhật...');
+
+    pyCall('start_in_app_update', latestUpdateInfo.download_url).then(res => {
+      if (res && res.status === 'busy') {
+        // Already updating
+      }
+    }).catch(err => {
+      window.onUpdateError(String(err));
+    });
+  }
+
+  window.onUpdateProgress = function(pct, mbDown, mbTotal, statusText) {
+    const pFill = document.getElementById('updateProgressBarFill');
+    const pPct = document.getElementById('updateProgressPercent');
+    const pStatus = document.getElementById('updateProgressStatus');
+    const pDetail = document.getElementById('updateProgressDetail');
+
+    const cleanPct = Math.min(100, Math.max(0, Number(pct) || 0));
+    if (pFill) pFill.style.width = cleanPct + '%';
+    if (pPct) pPct.textContent = Math.round(cleanPct) + '%';
+    if (pStatus && statusText) pStatus.textContent = statusText;
+    if (pDetail) {
+      const d = Number(mbDown) || 0;
+      const t = Number(mbTotal) || 0;
+      if (t > 0) {
+        pDetail.textContent = `${d.toFixed(1)} MB / ${t.toFixed(1)} MB (${Math.round(cleanPct)}%)`;
+      } else if (d > 0) {
+        pDetail.textContent = `${d.toFixed(1)} MB đã tải`;
+      } else {
+        pDetail.textContent = 'Đang kết nối...';
+      }
+    }
+  };
+
+  window.onUpdateError = function(errMsg) {
+    isUpdatingInProgress = false;
+    const progressBox = document.getElementById('updateProgressContainer');
+    const errBox = document.getElementById('updateErrorContainer');
+    const errText = document.getElementById('updateErrorMessage');
+    const btnDownload = document.getElementById('btnDownloadUpdate');
+    const btnDownloadText = document.getElementById('btnDownloadUpdateText');
+    const btnLater = document.getElementById('btnUpdateLater');
+    const btnClose = document.getElementById('btnCloseUpdateModal');
+    const btnManual = document.getElementById('btnUpdateManualFallback');
+
+    if (progressBox) progressBox.style.display = 'none';
+    if (errBox) {
+      errBox.style.display = 'block';
+      if (errText) errText.textContent = errMsg || 'Đã xảy ra sự cố trong quá trình tải xuống. Vui lòng thử lại hoặc tải qua trình duyệt.';
+    }
+    if (btnDownload) {
+      btnDownload.disabled = false;
+      btnDownload.style.opacity = '1';
+      btnDownload.style.pointerEvents = 'auto';
+    }
+    if (btnDownloadText) btnDownloadText.textContent = 'Thử lại';
+    if (btnLater) btnLater.style.display = 'inline-block';
+    if (btnClose) btnClose.style.display = 'block';
+    if (btnManual) btnManual.style.display = 'inline-block';
+    showToast('⚠️ Không thể cập nhật tự động. Hãy thử lại hoặc mở trình duyệt.');
+  };
+
+  function openManualBrowserDownload() {
     if (!latestUpdateInfo) return;
     const targetUrl = latestUpdateInfo.download_url || latestUpdateInfo.release_url || 'https://github.com/baro-hcmut/focus_flow/releases/latest';
     pyCall('open_external_url', targetUrl);
-    showToast('🚀 Đang mở trình duyệt để tải bản cập nhật mới...');
-    closeUpdateModal();
+    showToast('🚀 Đang mở trình duyệt để tải file cài...');
   }
 
   function manualCheckUpdate() {
@@ -11702,6 +11874,7 @@ start() {
         showToast('⚠️ Không thể kiểm tra cập nhật.');
         return;
       }
+      latestUpdateInfo = res;
       if (res.has_update) {
         window.onUpdateAvailable(res);
         openUpdateModal();
@@ -11709,8 +11882,10 @@ start() {
         if (setDesc) setDesc.textContent = 'Không thể kết nối tới GitHub. Vui lòng kiểm tra lại mạng.';
         showToast('⚠️ Không thể kết nối tới GitHub.');
       } else {
-        if (setDesc) setDesc.textContent = `Tuyệt vời! Bạn đang sử dụng phiên bản mới nhất (${res.current_version || 'v1.0'}).`;
-        showToast(`🎉 Bạn đang dùng phiên bản mới nhất (${res.current_version || 'v1.0'})!`);
+        if (setDesc) {
+          setDesc.innerHTML = `Tuyệt vời! Bạn đang sử dụng phiên bản mới nhất (${res.current_version || 'v2.0.0'}). <a href="javascript:void(0)" onclick="openUpdateModal(true)" style="color:var(--accent-primary); text-decoration:underline; margin-left:6px; font-weight:600;">Cài lại bản này</a>`;
+        }
+        showToast(`🎉 Bạn đang dùng phiên bản mới nhất (${res.current_version || 'v2.0.0'})!`);
       }
     }).catch(err => {
       if (btnText) btnText.textContent = 'Kiểm tra cập nhật';
