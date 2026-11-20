@@ -237,6 +237,7 @@ class PomodoroApp:
 
         # Load today's history accurately: today starts fresh from daily_history[today]
         today_key = time.strftime("%Y-%m-%d")
+        self.current_date = today_key
         history = self.config.setdefault("daily_history", {})
         today_data = history.get(today_key, {})
         self.completed_today = today_data.get("sessions", 0)
@@ -250,9 +251,9 @@ class PomodoroApp:
         self.app_mode = "study" # "study" (Học tập & Làm việc) or "eyecare" (Bảo vệ mắt)
         self.window = None
 
-        # Productivity Modules
-        self.checklist = MicroChecklist()
-        self.brain_dump = BrainDumpManager()
+        # Productivity Modules (Persisted in config.json)
+        self.checklist = MicroChecklist(self.config.get("checklist_tasks", []))
+        self.brain_dump = BrainDumpManager(self.config.get("brain_dump_notes", []))
         self.spotlight = None
         self._is_updating = False
 
@@ -395,10 +396,14 @@ class PomodoroApp:
         self.sync_timer_to_js()
 
     def sync_tasks_to_js(self):
+        self.config["checklist_tasks"] = self.checklist.tasks
+        save_config(self.config)
         code = f"window.updateTasks({json.dumps(self.checklist.tasks)});"
         self.eval_js(code)
 
     def sync_parking_to_js(self):
+        self.config["brain_dump_notes"] = self.brain_dump.notes
+        save_config(self.config)
         code = f"window.updateParking({json.dumps(self.brain_dump.notes)});"
         self.eval_js(code)
 
@@ -408,6 +413,22 @@ class PomodoroApp:
             time.sleep(1.0)
             if not self.is_running:
                 break
+
+            # Midnight date rollover check: seamlessly transition to new day without restart
+            now_day = time.strftime("%Y-%m-%d")
+            if now_day != self.current_date:
+                self.current_date = now_day
+                history = self.config.setdefault("daily_history", {})
+                today_data = history.get(now_day, {})
+                self.completed_today = today_data.get("sessions", 0)
+                self.total_focus_min = today_data.get("minutes", 0)
+                self.current_session = self.completed_today + 1
+                self.config["completed_sessions"] = self.completed_today
+                self.config["total_focus_minutes"] = self.total_focus_min
+                save_config(self.config)
+                if hasattr(self, 'distraction_monitor') and self.distraction_monitor:
+                    self.distraction_monitor.on_date_changed(now_day)
+                self.sync_timer_to_js()
 
             if self.state == STATE_FOCUS:
                 self.remaining_seconds -= 1

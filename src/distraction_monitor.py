@@ -107,9 +107,25 @@ class DistractionMonitor:
         self.current_distracted_hwnd = None
         self.total_tracked_seconds = 0
         self.last_save_time = time.time()
+        self.current_date = time.strftime("%Y-%m-%d")
 
         # Load persisted daily stats for today if available
         self._load_today_persisted_stats()
+
+    def on_date_changed(self, new_date_str):
+        """Called when system clock rolls over past midnight."""
+        try:
+            self.save_daily_stats(date_key=self.current_date)
+            self.current_date = new_date_str
+            self.usage_records = {}
+            self.total_tracked_seconds = 0
+            self.distraction_events = []
+            self.in_distraction = False
+            self.allowed_hwnds.clear()
+            self.snoozed_hwnds.clear()
+            self._load_today_persisted_stats()
+        except Exception:
+            pass
 
     def start_monitoring(self):
         if self.is_monitoring:
@@ -149,11 +165,11 @@ class DistractionMonitor:
         except Exception:
             pass
 
-    def save_daily_stats(self):
+    def save_daily_stats(self, date_key=None):
         """Flushes today's accumulated web/app tracking records to config.json."""
         try:
             from config_manager import load_config, save_config
-            today_key = time.strftime("%Y-%m-%d")
+            today_key = date_key or self.current_date or time.strftime("%Y-%m-%d")
             cfg = load_config()
             daily_usage = cfg.setdefault("daily_usage", {})
             daily_usage[today_key] = {

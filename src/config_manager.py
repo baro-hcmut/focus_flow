@@ -1,7 +1,12 @@
 import json
 import os
+import sys
 
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if getattr(sys, 'frozen', False):
+    ROOT_DIR = os.path.dirname(sys.executable)
+else:
+    ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 CONFIG_FILE = os.path.join(ROOT_DIR, 'config.json')
 
 DEFAULT_CONFIG = {

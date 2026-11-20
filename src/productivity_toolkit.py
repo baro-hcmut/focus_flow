@@ -17,8 +17,8 @@ def enable_dark_titlebar(window):
 
 class MicroChecklist:
     """Manages dynamic user tasks per session, adding/removing/editing, and completion states."""
-    def __init__(self):
-        self.current_tasks = []
+    def __init__(self, initial_tasks=None):
+        self.current_tasks = list(initial_tasks) if initial_tasks else []
         self.session_history = {} # session_num -> list of tasks
 
     @property
@@ -109,9 +109,9 @@ class MicroChecklist:
 
 class BrainDumpManager:
     """Manages the Distraction Parking Lot: captures distracting thoughts and logged distraction events."""
-    def __init__(self):
+    def __init__(self, initial_notes=None):
         # list of {"time": str, "text": str, "resolved": bool, "type": "manual" | "detected"}
-        self.notes = []
+        self.notes = list(initial_notes) if initial_notes else []
 
     def add_note(self, text, note_type="manual"):
         clean = text.strip()

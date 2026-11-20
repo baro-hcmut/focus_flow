@@ -7345,7 +7345,6 @@ function copyPuritySummary() {
       const sub = document.getElementById("dialSubInstruction");
       const mainBtn = document.getElementById("btnMainAction");
       const mainBtnText = document.getElementById("btnMainActionText");
-      const pauseBtn = document.getElementById("btnPauseAction");
 
       if (mode) {
         if (mode === "eyecare" || mode === "study") {
@@ -7669,6 +7668,7 @@ function copyPuritySummary() {
       breathingPhaseTimer = null;
       cancelEmergencyUnlock();
     }
+    window.hideRestModal = hideRestModal;
 
     window.showReflectionModal = function(sessionNum, purityData) {
       if (document.body.classList.contains("mini-mode")) {
