@@ -54,7 +54,7 @@ STATE_FOCUS = "FOCUS"
 STATE_BREAK = "BREAK"
 STATE_PAUSED = "PAUSED"
 
-APP_VERSION = "1.0.2"
+APP_VERSION = "2.0.0"
 GITHUB_REPO = "baro-hcmut/focus_flow"
 
 def parse_version_tuple(v_str):
@@ -230,9 +230,14 @@ class PomodoroApp:
         self.prev_state = STATE_IDLE
         self.remaining_seconds = self.focus_duration
         self.total_target_seconds = self.focus_duration
-        self.current_session = 1
-        self.completed_today = self.config.get("completed_sessions", 0)
-        self.total_focus_min = self.config.get("total_focus_minutes", 0)
+
+        # Load today's history accurately (re-calculates today's completed sessions and total minutes)
+        today_key = time.strftime("%Y-%m-%d")
+        history = self.config.setdefault("daily_history", {})
+        today_data = history.get(today_key, {})
+        self.completed_today = today_data.get("sessions", 0)
+        self.total_focus_min = today_data.get("minutes", 0)
+        self.current_session = self.completed_today + 1
 
         self.is_running = True
         self.is_mini_mode = False
@@ -410,7 +415,7 @@ class PomodoroApp:
             elif self.state == STATE_BREAK:
                 self.remaining_seconds -= 1
                 if self.remaining_seconds <= 0:
-                    self._on_break_finished()
+                    self._on_break_finished(auto_start=False)
                 else:
                     self.sync_timer_to_js()
 
@@ -485,10 +490,10 @@ class PomodoroApp:
         if self.state == STATE_FOCUS:
             self._on_focus_finished()
         elif self.state == STATE_BREAK:
-            self._on_break_finished()
+            self._on_break_finished(auto_start=False)
         elif self.state == STATE_PAUSED:
             if getattr(self, 'prev_state', None) == STATE_BREAK:
-                self._on_break_finished()
+                self._on_break_finished(auto_start=False)
             else:
                 self._on_focus_finished()
 
@@ -517,8 +522,8 @@ class PomodoroApp:
             history = self.config.setdefault("daily_history", {})
             if today_key not in history:
                 history[today_key] = {"sessions": 0, "minutes": 0}
-            history[today_key]["sessions"] = history[today_key].get("sessions", 0) + 1
-            history[today_key]["minutes"] = history[today_key].get("minutes", 0) + actual_minutes
+            history[today_key]["sessions"] = self.completed_today
+            history[today_key]["minutes"] = self.total_focus_min
 
             save_config(self.config)
 
@@ -561,16 +566,16 @@ class PomodoroApp:
         self._start_break_watchdog()
 
     def _start_break_watchdog(self):
-        """Active Win32 Watchdog: Keeps the break overlay topmost and snaps back if dragged or user tries to switch windows."""
+        """Active Win32 Watchdog: Ensures other apps do not steal foreground during break without freezing message pump."""
         def _watchdog_loop():
             last_screen_off_time = time.time()
-            screen_w = user32.GetSystemMetrics(0) # SM_CXSCREEN
-            screen_h = user32.GetSystemMetrics(1) # SM_CYSCREEN
             HWND_TOPMOST = -1
             SWP_SHOWWINDOW = 0x0040
+            SWP_NOMOVE = 0x0002
+            SWP_NOSIZE = 0x0001
 
             while self.is_running and self.state == STATE_BREAK:
-                time.sleep(0.3)
+                time.sleep(1.0)
                 if not self.is_running or self.state != STATE_BREAK:
                     break
 
@@ -579,21 +584,16 @@ class PomodoroApp:
                     if native_form and hasattr(native_form, 'Handle'):
                         w_hwnd = native_form.Handle.ToInt32()
                         if w_hwnd:
-                            # 1. Enforce window bounds to cover full screen (prevents dragging out of fullscreen)
-                            from ctypes import wintypes
-                            rect = wintypes.RECT()
-                            user32.GetWindowRect(w_hwnd, ctypes.byref(rect))
-                            cur_w = rect.right - rect.left
-                            cur_h = rect.bottom - rect.top
-                            if cur_w < screen_w or cur_h < screen_h or rect.left != 0 or rect.top != 0:
-                                user32.SetWindowPos(w_hwnd, HWND_TOPMOST, 0, 0, screen_w, screen_h, SWP_SHOWWINDOW)
-
-                            # 2. Enforce foreground topmost
                             fg = user32.GetForegroundWindow()
-                            if fg != w_hwnd:
-                                user32.SetWindowPos(w_hwnd, HWND_TOPMOST, 0, 0, screen_w, screen_h, SWP_SHOWWINDOW)
-                                user32.BringWindowToTop(w_hwnd)
-                                user32.SetForegroundWindow(w_hwnd)
+                            if fg:
+                                from ctypes import wintypes
+                                fg_pid = wintypes.DWORD()
+                                user32.GetWindowThreadProcessId(fg, ctypes.byref(fg_pid))
+                                # Only if a DIFFERENT process stole foreground, bring break window back:
+                                # NEVER call SetForegroundWindow when user clicks inside this process (WebView2 child)
+                                if fg_pid.value and fg_pid.value != os.getpid():
+                                    user32.SetWindowPos(w_hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW)
+                                    user32.SetForegroundWindow(w_hwnd)
                 except Exception:
                     pass
 
@@ -605,7 +605,7 @@ class PomodoroApp:
 
         threading.Thread(target=_watchdog_loop, daemon=True).start()
 
-    def _on_break_finished(self):
+    def _on_break_finished(self, auto_start=False):
         play_focus_sound()
         
         # Exit fullscreen overlay cleanly
@@ -625,21 +625,22 @@ class PomodoroApp:
         if self.enforcement_mode in ("screen_off", "turnoff"):
             wake_up_monitor()
 
-        # Advance session
-        if self.target_sessions_val == 0 or self.current_session < self.target_sessions_val:
-            self.current_session += 1
+        # Advance session: each session is just 1 session
+        self.current_session += 1
+        self.remaining_seconds = self.focus_duration
+        self.total_target_seconds = self.focus_duration
+
+        # User request: Khi ấn skip ca nghỉ thì giờ học phải đứng yên chứ không phải kiểu đồng hồ tập trung nó tự chạy liền.
+        should_auto_start = auto_start and self.config.get("auto_start_next_focus", False)
+        if should_auto_start:
             self.state = STATE_FOCUS
-            self.remaining_seconds = self.focus_duration
-            self.total_target_seconds = self.focus_duration
             self.distraction_monitor.start_monitoring()
-            self.sync_timer_to_js()
         else:
             self.state = STATE_IDLE
-            self.current_session = 1
-            self.remaining_seconds = self.focus_duration
-            self.total_target_seconds = self.focus_duration
-            self.sync_timer_to_js()
-            self.eval_js("window.showToast('🏆 Chúc mừng! Bạn đã hoàn thành toàn bộ mục tiêu ca học hôm nay!');")
+            self.distraction_monitor.stop_monitoring()
+
+        self.sync_timer_to_js()
+        self.eval_js("window.hideRestModal && window.hideRestModal();")
 
     def toggle_spotlight(self):
         def _run_spotlight():
@@ -652,10 +653,21 @@ class PomodoroApp:
         if not self.window:
             return
         if not self.is_mini_mode:
-            self.is_mini_mode = True
-            self.window.resize(365, 96)
-            self.window.on_top = True
-            self.eval_js("document.body.classList.add('mini-mode');")
+            self.set_mini_mode(True)
+        else:
+            self.restore_full_window()
+
+    def set_mini_mode(self, enabled=True):
+        self.is_mini_mode = enabled
+        if not self.window:
+            return
+        if enabled:
+            try:
+                self.window.resize(365, 96)
+                self.window.on_top = True
+                self.eval_js("document.body.classList.add('mini-mode');")
+            except Exception:
+                pass
         else:
             self.restore_full_window()
 
@@ -795,17 +807,20 @@ class Api:
         return "ok"
 
     def apply_preset(self, focus_min, break_min):
-        f_min = int(focus_min)
-        b_min = int(break_min)
+        f_min = max(1, int(focus_min))
+        b_min = max(1, int(break_min))
         self._app.focus_duration = f_min * 60
         self._app.break_duration = b_min * 60
         self._app.config["focus_minutes"] = f_min
         self._app.config["break_minutes"] = b_min
         save_config(self._app.config)
-        if self._app.state == STATE_IDLE:
+        # When setting/applying a study cycle, update timer and stand ready at IDLE if not currently on a break
+        if self._app.state != STATE_BREAK:
+            self._app.state = STATE_IDLE
             self._app.remaining_seconds = self._app.focus_duration
             self._app.total_target_seconds = self._app.focus_duration
-            self._app.sync_timer_to_js()
+            self._app.distraction_monitor.stop_monitoring()
+        self._app.sync_timer_to_js()
 
     def set_enforcement_mode(self, mode):
         normalized = "screen_off" if mode in ("screen_off", "turnoff") else mode
@@ -840,7 +855,7 @@ class Api:
         self._app.on_close()
 
     def start_next_session_early(self):
-        self._app._on_break_finished()
+        self._app._on_break_finished(auto_start=False)
 
     def submit_reflection(self, rating, note_text=""):
         self._app.enter_break_mode()
@@ -872,16 +887,21 @@ class Api:
             except Exception:
                 pass
         self._app.eval_js("window.hideFrictionBarrier();")
-        if self._app.window:
-            try:
-                self._app.window.restore()
-            except Exception:
-                pass
+        # User requested: lúc ấn quay lại bàn học thì tôi muốn nó ở giao diện của mini hud chứ k phải giao diện to.
+        self._app.set_mini_mode(True)
 
     def friction_allow_distraction(self):
         if self._app.current_distracted_hwnd:
-            self._app.distraction_monitor.allowed_hwnds.add(self._app.current_distracted_hwnd)
+            # User requested: cỡ 1-2 phút sau sẽ hiện lại chứ k cho phép mở các trang giải trí luôn.
+            # Snooze barrier for 120 seconds (2 minutes), then barrier triggers again!
+            self._app.distraction_monitor.snooze_hwnd(self._app.current_distracted_hwnd, duration_seconds=120)
+            try:
+                user32.SetForegroundWindow(self._app.current_distracted_hwnd)
+            except Exception:
+                pass
         self._app.eval_js("window.hideFrictionBarrier();")
+        # Switch to mini HUD so Focus Flow doesn't obscure the user's screen during the 2 minutes
+        self._app.set_mini_mode(True)
 
     def set_sound_volume(self, vol):
         v = max(0, min(100, int(vol)))

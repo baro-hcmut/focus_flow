@@ -100,6 +100,7 @@ class DistractionMonitor:
         self.usage_records = {}
         self.distraction_events = [] # list of {"app": str, "title": str, "time": str, "duration": int}
         self.allowed_hwnds = set()
+        self.snoozed_hwnds = {} # hwnd -> expiry_timestamp (temporary 1-2 minutes access)
         self.last_distraction_time = 0
         self.in_distraction = False
         self._thread = None
@@ -126,6 +127,13 @@ class DistractionMonitor:
         # Do not wipe historical daily usage on timer adjustment!
         self.in_distraction = False
         self.allowed_hwnds.clear()
+        self.snoozed_hwnds.clear()
+
+    def snooze_hwnd(self, hwnd, duration_seconds=120):
+        """Temporarily allow entertainment on this window for duration_seconds (e.g. 1-2 minutes)."""
+        if hwnd:
+            self.snoozed_hwnds[hwnd] = time.time() + duration_seconds
+            self.in_distraction = False
 
     def _load_today_persisted_stats(self):
         """Loads today's accumulated tracking records from config.json so they survive app restarts."""
@@ -264,9 +272,16 @@ class DistractionMonitor:
             self.usage_records[app_key]["seconds"] += 1
             self.usage_records[app_key]["last_title"] = raw_title[:80]
 
+            now = time.time()
+            # Clean up expired snoozes
+            expired_hwnds = [h for h, exp in list(self.snoozed_hwnds.items()) if now >= exp]
+            for h in expired_hwnds:
+                del self.snoozed_hwnds[h]
+
+            is_snoozed = (hwnd in self.snoozed_hwnds)
             # Handle Distraction / Barrier
             is_distracted = (category == "entertainment")
-            if is_distracted and hwnd not in self.allowed_hwnds:
+            if is_distracted and (hwnd not in self.allowed_hwnds) and not is_snoozed:
                 self.current_distracted_hwnd = hwnd
                 if not self.in_distraction:
                     self.in_distraction = True
