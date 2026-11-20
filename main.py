@@ -235,7 +235,7 @@ class PomodoroApp:
         self.remaining_seconds = self.focus_duration
         self.total_target_seconds = self.focus_duration
 
-        # Load today's history accurately (re-calculates today's completed sessions and total minutes)
+        # Load today's history accurately: today starts fresh from daily_history[today]
         today_key = time.strftime("%Y-%m-%d")
         history = self.config.setdefault("daily_history", {})
         today_data = history.get(today_key, {})

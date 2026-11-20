@@ -35,8 +35,16 @@ def load_config():
         return DEFAULT_CONFIG.copy()
 
 def save_config(cfg):
+    temp_file = CONFIG_FILE + '.tmp'
     try:
-        with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+        with open(temp_file, 'w', encoding='utf-8') as f:
             json.dump(cfg, f, indent=4, ensure_ascii=False)
+        if os.path.exists(temp_file):
+            os.replace(temp_file, CONFIG_FILE)
     except Exception as e:
+        try:
+            with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+                json.dump(cfg, f, indent=4, ensure_ascii=False)
+        except Exception:
+            pass
         print(f"Error saving config: {e}")
