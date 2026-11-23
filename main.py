@@ -248,6 +248,8 @@ class PomodoroApp:
         self.is_mini_mode = False
         self._mini_mode_lock = threading.Lock()
         self._last_mini_toggle_ts = 0.0
+        self._state_lock = threading.Lock()
+        self._reflection_pending = False
         self.is_fullscreen_overlay = False
         self.current_distracted_hwnd = None
         self.app_mode = "study" # "study" (Học tập & Làm việc) or "eyecare" (Bảo vệ mắt)
@@ -419,6 +421,7 @@ class PomodoroApp:
         m = max(1, int(minutes))
         if mode:
             self.app_mode = mode
+        self._reflection_pending = False
         self.focus_duration = m * 60
         self.remaining_seconds = self.focus_duration
         self.total_target_seconds = self.focus_duration
@@ -518,76 +521,107 @@ class PomodoroApp:
                 pass
 
     def start_timer(self):
-        if self.state == STATE_IDLE:
-            self.state = STATE_FOCUS
-            self.remaining_seconds = self.focus_duration
-            self.total_target_seconds = self.focus_duration
-            play_focus_sound()
-            self.distraction_monitor.start_monitoring()
-            self.sync_timer_to_js()
-
-        elif self.state == STATE_PAUSED:
-            self.state = self.prev_state if self.prev_state != STATE_IDLE else STATE_FOCUS
-            if self.state == STATE_FOCUS:
+        with self._state_lock:
+            self._reflection_pending = False
+            if self.state == STATE_IDLE:
+                self.state = STATE_FOCUS
+                self.remaining_seconds = self.focus_duration
+                self.total_target_seconds = self.focus_duration
+                play_focus_sound()
                 self.distraction_monitor.start_monitoring()
-            self.sync_timer_to_js()
+                self.sync_timer_to_js()
+
+            elif self.state == STATE_PAUSED:
+                self.state = self.prev_state if self.prev_state != STATE_IDLE else STATE_FOCUS
+                if self.state == STATE_FOCUS:
+                    self.distraction_monitor.start_monitoring()
+                self.sync_timer_to_js()
 
     def toggle_pause(self):
-        if self.state in (STATE_FOCUS, STATE_BREAK):
-            self.prev_state = self.state
-            self.state = STATE_PAUSED
-            self.distraction_monitor.stop_monitoring()
-            self.sync_timer_to_js()
-        elif self.state == STATE_PAUSED:
-            self.start_timer()
+        with self._state_lock:
+            if self._reflection_pending:
+                return
+            if self.state in (STATE_FOCUS, STATE_BREAK):
+                self.prev_state = self.state
+                self.state = STATE_PAUSED
+                self.distraction_monitor.stop_monitoring()
+                self.sync_timer_to_js()
+            elif self.state == STATE_PAUSED:
+                # Re-use start_timer logic outside lock or inline safely
+                self.state = self.prev_state if self.prev_state != STATE_IDLE else STATE_FOCUS
+                if self.state == STATE_FOCUS:
+                    self.distraction_monitor.start_monitoring()
+                self.sync_timer_to_js()
 
     def reset_timer(self):
-        self.state = STATE_IDLE
-        self.remaining_seconds = self.focus_duration
-        self.total_target_seconds = self.focus_duration
-        self.distraction_monitor.stop_monitoring()
-        self.sync_timer_to_js()
+        with self._state_lock:
+            self._reflection_pending = False
+            self.state = STATE_IDLE
+            self.prev_state = STATE_IDLE
+            self.remaining_seconds = self.focus_duration
+            self.total_target_seconds = self.focus_duration
+            self.distraction_monitor.stop_monitoring()
+            self.sync_timer_to_js()
 
     def skip_phase(self):
-        if self.state == STATE_FOCUS:
-            self._on_focus_finished()
-        elif self.state == STATE_BREAK:
-            self._on_break_finished(auto_start=False)
-        elif self.state == STATE_PAUSED:
-            if getattr(self, 'prev_state', None) == STATE_BREAK:
-                self._on_break_finished(auto_start=False)
+        with self._state_lock:
+            if self._reflection_pending:
+                # Already finished focus and awaiting reflection modal -> skip straight into break
+                action = "enter_break"
+            elif self.state == STATE_FOCUS:
+                action = "finish_focus"
+            elif self.state == STATE_BREAK:
+                action = "finish_break"
+            elif self.state == STATE_PAUSED:
+                if getattr(self, 'prev_state', None) == STATE_BREAK:
+                    action = "finish_break"
+                else:
+                    action = "finish_focus"
             else:
-                self._on_focus_finished()
+                return
+
+        if action == "enter_break":
+            self.enter_break_mode()
+        elif action == "finish_focus":
+            self._on_focus_finished()
+        elif action == "finish_break":
+            self._on_break_finished(auto_start=False)
 
     def _on_focus_finished(self):
+        with self._state_lock:
+            if self._reflection_pending or self.state not in (STATE_FOCUS, STATE_PAUSED):
+                return
+            self._reflection_pending = True
+            self.state = STATE_PAUSED
+            self.prev_state = STATE_IDLE
+
+            # Calculate actual focus time (crediting ONLY actual time studied, not unspent planned duration)
+            elapsed_seconds = max(0, self.total_target_seconds - max(0, self.remaining_seconds))
+            actual_minutes = int(round(elapsed_seconds / 60))
+
+            # Stats update
+            if actual_minutes > 0:
+                self.completed_today += 1
+                self.total_focus_min += actual_minutes
+                self.config["completed_sessions"] = self.completed_today
+                self.config["total_focus_minutes"] = self.total_focus_min
+
+                # Daily history recording
+                today_key = time.strftime("%Y-%m-%d")
+                history = self.config.setdefault("daily_history", {})
+                if today_key not in history:
+                    history[today_key] = {"sessions": 0, "minutes": 0}
+                history[today_key]["sessions"] = self.completed_today
+                history[today_key]["minutes"] = self.total_focus_min
+
+                save_config(self.config)
+
         play_break_sound()
         self.distraction_monitor.stop_monitoring()
-        self.state = STATE_PAUSED
 
         # If in mini HUD mode, restore to full normal window size so the modal is fully visible and clickable
         if self.is_mini_mode:
             self.restore_full_window()
-
-        # Calculate actual focus time (crediting ONLY actual time studied, not unspent planned duration)
-        elapsed_seconds = max(0, self.total_target_seconds - max(0, self.remaining_seconds))
-        actual_minutes = int(round(elapsed_seconds / 60))
-
-        # Stats update
-        if actual_minutes > 0:
-            self.completed_today += 1
-            self.total_focus_min += actual_minutes
-            self.config["completed_sessions"] = self.completed_today
-            self.config["total_focus_minutes"] = self.total_focus_min
-
-            # Daily history recording
-            today_key = time.strftime("%Y-%m-%d")
-            history = self.config.setdefault("daily_history", {})
-            if today_key not in history:
-                history[today_key] = {"sessions": 0, "minutes": 0}
-            history[today_key]["sessions"] = self.completed_today
-            history[today_key]["minutes"] = self.total_focus_min
-
-            save_config(self.config)
 
         self.sync_timer_to_js()
 
@@ -600,9 +634,11 @@ class PomodoroApp:
             self.eval_js(f"window.showReflectionModal({self.current_session}, {json.dumps(purity_data)});")
 
     def enter_break_mode(self):
-        self.state = STATE_BREAK
-        self.remaining_seconds = self.break_duration
-        self.total_target_seconds = self.break_duration
+        with self._state_lock:
+            self._reflection_pending = False
+            self.state = STATE_BREAK
+            self.remaining_seconds = self.break_duration
+            self.total_target_seconds = self.break_duration
         self.sync_timer_to_js()
 
         # Hardcore break enforcement: ALWAYS activate fullscreen topmost lockout
@@ -614,7 +650,8 @@ class PomodoroApp:
                     self.window.toggle_fullscreen()
                 elif not native_form:
                     self.window.toggle_fullscreen()
-                self.window.on_top = True
+                if not self._run_on_ui_thread(lambda nf: setattr(nf, 'TopMost', True)):
+                    self.window.on_top = True
             except Exception:
                 pass
 
@@ -654,8 +691,11 @@ class PomodoroApp:
                                 # Only if a DIFFERENT process stole foreground, bring break window back:
                                 # NEVER call SetForegroundWindow when user clicks inside this process (WebView2 child)
                                 if fg_pid.value and fg_pid.value != os.getpid():
-                                    user32.SetWindowPos(w_hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW)
-                                    user32.SetForegroundWindow(w_hwnd)
+                                    def _enforce_break_topmost(nf):
+                                        hwnd_val = nf.Handle.ToInt32()
+                                        user32.SetWindowPos(hwnd_val, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW)
+                                        user32.SetForegroundWindow(hwnd_val)
+                                    self._run_on_ui_thread(_enforce_break_topmost)
                 except Exception:
                     pass
 
@@ -1022,9 +1062,9 @@ class Api:
     def friction_allow_as_study(self):
         if self._app.current_distracted_hwnd:
             self._app.distraction_monitor.allowed_hwnds.add(self._app.current_distracted_hwnd)
-            if self._app.distraction_monitor.usage_records:
-                last_key = list(self._app.distraction_monitor.usage_records.keys())[-1]
-                self._app.distraction_monitor.reclassify_item(last_key, "online_study")
+            target_key = getattr(self._app.distraction_monitor, 'last_distracted_key', None)
+            if target_key:
+                self._app.distraction_monitor.reclassify_item(target_key, "online_study")
         self._app.eval_js("window.hideFrictionBarrier();")
 
     def set_target_sessions(self, target):
@@ -1051,6 +1091,7 @@ class Api:
         save_config(self._app.config)
         # When setting/applying a study cycle, update timer and stand ready at IDLE if not currently on a break
         if self._app.state != STATE_BREAK:
+            self._app._reflection_pending = False
             self._app.state = STATE_IDLE
             self._app.remaining_seconds = self._app.focus_duration
             self._app.total_target_seconds = self._app.focus_duration
@@ -1100,6 +1141,7 @@ class Api:
         return "ok"
 
     def extend_eyecare_work(self, minutes=5):
+        self._app._reflection_pending = False
         self._app.state = STATE_FOCUS
         self._app.remaining_seconds = int(minutes) * 60
         self._app.total_target_seconds = int(minutes) * 60

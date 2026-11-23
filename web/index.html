@@ -6555,8 +6555,9 @@ body[data-fx="pixel"] .ambient-pill.active {
         closeCustomTimerModal();
         closePurityReportModal();
         closeMovieFinishedModal();
+        if (typeof closeUpdateModal === "function") closeUpdateModal();
       } else if (e.code === "Space" && e.target.tagName !== "INPUT" && e.target.tagName !== "TEXTAREA") {
-        if (document.querySelector(".modal.active")) return;
+        if (document.querySelector(".modal.active, .modal-backdrop.active, .rest-modal-overlay.active, .reflection-modal.active, .friction-modal.active")) return;
         e.preventDefault();
         if (appState !== "BREAK") {
           handleMainActionClick();
@@ -7271,16 +7272,19 @@ function copyPuritySummary() {
           const tagClass = item.category === "deep_work" ? "study" : (item.category === "online_study" ? "online_study" : "distraction");
           const tagLabel = item.category === "deep_work" ? "Học sâu" : (item.category === "online_study" ? "Học trực tuyến" : "Xao nhãng");
 
+          const safeName = escapeUpdateHtml(item.name);
+          const safeTitle = item.title ? escapeUpdateHtml(item.title) : '';
+
           row.innerHTML = `
             <div class="app-info-line">
               <span class="app-name">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg>
-                <strong>${item.name}</strong>
-                ${item.title ? `<span style="font-size:10px; color:var(--text-dim); max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">- ${item.title}</span>` : ''}
+                <strong>${safeName}</strong>
+                ${safeTitle ? `<span style="font-size:10px; color:var(--text-dim); max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">- ${safeTitle}</span>` : ''}
               </span>
               <div style="display:flex; align-items:center; gap:8px;">
                 <span class="app-duration-tag">${item.time_str} (${item.percent}%)</span>
-                <span class="tag-btn-reclassify ${tagClass}" onclick="toggleAppCategory('${item.key}', '${item.category}')" title="Bấm để đổi: Học bài <-> Xao nhãng">
+                <span class="tag-btn-reclassify ${tagClass}" title="Bấm để đổi: Học bài <-> Xao nhãng">
                   ${tagLabel} ⇄
                 </span>
               </div>
@@ -7289,6 +7293,10 @@ function copyPuritySummary() {
               <div class="app-bar-fill" style="width: ${item.percent}%; background: ${item.category === 'entertainment' ? 'var(--rose)' : (item.category === 'online_study' ? 'var(--cyan)' : 'var(--emerald)')};"></div>
             </div>
           `;
+          const reclassifyBtn = row.querySelector(".tag-btn-reclassify");
+          if (reclassifyBtn) {
+            reclassifyBtn.onclick = () => toggleAppCategory(item.key, item.category);
+          }
           listEl.appendChild(row);
         });
       } else {
@@ -7550,8 +7558,11 @@ function copyPuritySummary() {
       }
 
       if (stats) {
-        document.getElementById("footerStatsLabel").innerHTML = 
-          `Hôm nay: ${stats.completed || 0} ca (${stats.minutes || 0} phút) • <span style="text-decoration:underline; color:#38bdf8;">[Xem chi tiết Web/App]</span>`;
+        const footerRightTxt = (typeof currentTab !== "undefined" && currentTab === "analytics")
+          ? `<span style="color:#94a3b8;">Đang mở báo cáo Web/App</span>`
+          : `<span style="text-decoration:underline; color:#38bdf8;">[Xem chi tiết Web/App]</span>`;
+        document.getElementById("footerStatsLabel").innerHTML =
+          `Hôm nay: ${stats.completed || 0} ca (${stats.minutes || 0} phút) • ${footerRightTxt}`;
       }
     };
 

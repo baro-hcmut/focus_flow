@@ -104,7 +104,9 @@ class DistractionMonitor:
         self.last_distraction_time = 0
         self.in_distraction = False
         self._thread = None
+        self._data_lock = threading.Lock()
         self.current_distracted_hwnd = None
+        self.last_distracted_key = None
         self.total_tracked_seconds = 0
         self.last_save_time = time.time()
         self.current_date = time.strftime("%Y-%m-%d")
@@ -116,13 +118,15 @@ class DistractionMonitor:
         """Called when system clock rolls over past midnight."""
         try:
             self.save_daily_stats(date_key=self.current_date)
-            self.current_date = new_date_str
-            self.usage_records = {}
-            self.total_tracked_seconds = 0
-            self.distraction_events = []
-            self.in_distraction = False
-            self.allowed_hwnds.clear()
-            self.snoozed_hwnds.clear()
+            with self._data_lock:
+                self.current_date = new_date_str
+                self.usage_records = {}
+                self.total_tracked_seconds = 0
+                self.distraction_events = []
+                self.in_distraction = False
+                self.last_distracted_key = None
+                self.allowed_hwnds.clear()
+                self.snoozed_hwnds.clear()
             self._load_today_persisted_stats()
         except Exception:
             pass
@@ -169,13 +173,17 @@ class DistractionMonitor:
         """Flushes today's accumulated web/app tracking records to config.json."""
         try:
             from config_manager import load_config, save_config
-            today_key = date_key or self.current_date or time.strftime("%Y-%m-%d")
+            with self._data_lock:
+                today_key = date_key or self.current_date or time.strftime("%Y-%m-%d")
+                records_copy = {k: dict(v) for k, v in self.usage_records.items()}
+                total_sec = self.total_tracked_seconds
+                events_copy = list(self.distraction_events[-30:])
             cfg = load_config()
             daily_usage = cfg.setdefault("daily_usage", {})
             daily_usage[today_key] = {
-                "records": self.usage_records,
-                "total_seconds": self.total_tracked_seconds,
-                "events": self.distraction_events[-30:]
+                "records": records_copy,
+                "total_seconds": total_sec,
+                "events": events_copy
             }
             save_config(cfg)
         except Exception:
@@ -187,9 +195,14 @@ class DistractionMonitor:
 
     def reclassify_item(self, app_key: str, new_category: str):
         """Allows the user to manually change an app's category (e.g. from entertainment to study)."""
-        if app_key in self.usage_records:
-            self.usage_records[app_key]["category"] = new_category
-            self.usage_records[app_key]["manual"] = new_category
+        updated = False
+        with self._data_lock:
+            if app_key in self.usage_records:
+                self.usage_records[app_key]["category"] = new_category
+                self.usage_records[app_key]["manual"] = new_category
+                updated = True
+        if updated:
+            self.save_daily_stats()
 
     def _worker_loop(self):
         while self.is_monitoring:
@@ -268,60 +281,61 @@ class DistractionMonitor:
             if not hwnd or not proc_name:
                 return
 
-            self.total_tracked_seconds += 1
             app_key, display_name, category = self._classify_window(raw_title, proc_name)
 
-            # Check if user has manual override
-            if app_key in self.usage_records and self.usage_records[app_key].get("manual"):
-                category = self.usage_records[app_key]["manual"]
+            with self._data_lock:
+                self.total_tracked_seconds += 1
+                # Check if user has manual override
+                if app_key in self.usage_records and self.usage_records[app_key].get("manual"):
+                    category = self.usage_records[app_key]["manual"]
 
-            # Update records
-            if app_key not in self.usage_records:
-                self.usage_records[app_key] = {
-                    "key": app_key,
-                    "name": display_name,
-                    "category": category,
-                    "seconds": 0,
-                    "last_title": raw_title[:80],
-                    "manual": None
-                }
-            self.usage_records[app_key]["seconds"] += 1
-            self.usage_records[app_key]["last_title"] = raw_title[:80]
+                # Update records
+                if app_key not in self.usage_records:
+                    self.usage_records[app_key] = {
+                        "key": app_key,
+                        "name": display_name,
+                        "category": category,
+                        "seconds": 0,
+                        "last_title": raw_title[:80],
+                        "manual": None
+                    }
+                self.usage_records[app_key]["seconds"] += 1
+                self.usage_records[app_key]["last_title"] = raw_title[:80]
 
-            now = time.time()
-            # Clean up expired snoozes
-            expired_hwnds = [h for h, exp in list(self.snoozed_hwnds.items()) if now >= exp]
-            for h in expired_hwnds:
-                del self.snoozed_hwnds[h]
+                now = time.time()
+                # Clean up expired snoozes
+                expired_hwnds = [h for h, exp in list(self.snoozed_hwnds.items()) if now >= exp]
+                for h in expired_hwnds:
+                    del self.snoozed_hwnds[h]
 
-            is_snoozed = (hwnd in self.snoozed_hwnds)
-            # Handle Distraction / Barrier
-            is_distracted = (category == "entertainment")
-            if is_distracted and (hwnd not in self.allowed_hwnds) and not is_snoozed:
-                self.current_distracted_hwnd = hwnd
-                if not self.in_distraction:
-                    self.in_distraction = True
-                    now_str = time.strftime("%H:%M:%S")
-                    title_snippet = raw_title[:50] if raw_title else display_name
-                    self.distraction_events.append({
-                        "app": display_name,
-                        "title": title_snippet,
-                        "time": now_str,
-                        "duration": 1
-                    })
-                    # NOTE: Do NOT add note to brain_dump_manager!
-                    # Brain dump is reserved purely for user's own thoughts.
-
-                    if self.barrier_enabled:
-                        if time.time() - self.last_distraction_time > 8:
-                            self.last_distraction_time = time.time()
-                            if self.on_barrier_trigger:
-                                self.on_barrier_trigger(title_snippet, hwnd)
+                is_snoozed = (hwnd in self.snoozed_hwnds)
+                # Handle Distraction / Barrier
+                is_distracted = (category == "entertainment")
+                trigger_barrier = False
+                title_snippet = raw_title[:50] if raw_title else display_name
+                if is_distracted and (hwnd not in self.allowed_hwnds) and not is_snoozed:
+                    self.current_distracted_hwnd = hwnd
+                    self.last_distracted_key = app_key
+                    if not self.in_distraction:
+                        self.in_distraction = True
+                        now_str = time.strftime("%H:%M:%S")
+                        self.distraction_events.append({
+                            "app": display_name,
+                            "title": title_snippet,
+                            "time": now_str,
+                            "duration": 1
+                        })
+                        if self.barrier_enabled and (now - self.last_distraction_time > 8):
+                            self.last_distraction_time = now
+                            trigger_barrier = True
+                    else:
+                        if self.distraction_events:
+                            self.distraction_events[-1]["duration"] += 1
                 else:
-                    if self.distraction_events:
-                        self.distraction_events[-1]["duration"] += 1
-            else:
-                self.in_distraction = False
+                    self.in_distraction = False
+
+            if trigger_barrier and self.on_barrier_trigger:
+                self.on_barrier_trigger(title_snippet, hwnd)
 
         except Exception:
             pass
@@ -332,15 +346,20 @@ class DistractionMonitor:
         Returns complete, structured honest tracking report for Tab 3 and Modals.
         """
         target_seconds = max(1, int(total_focus_minutes * 60))
-        sum_usage = sum(d.get("seconds", 0) for d in self.usage_records.values())
-        actual_tracked = max(1, max(self.total_tracked_seconds, sum_usage))
+        with self._data_lock:
+            records_snapshot = [(k, dict(v)) for k, v in self.usage_records.items()]
+            tracked_snapshot = self.total_tracked_seconds
+            events_snapshot = [dict(e) for e in self.distraction_events]
+
+        sum_usage = sum(d.get("seconds", 0) for _, d in records_snapshot)
+        actual_tracked = max(1, max(tracked_snapshot, sum_usage))
 
         deep_work_sec = 0
         online_study_sec = 0
         entertainment_sec = 0
 
         breakdown = []
-        for key, data in sorted(self.usage_records.items(), key=lambda x: x[1]["seconds"], reverse=True):
+        for key, data in sorted(records_snapshot, key=lambda x: x[1]["seconds"], reverse=True):
             sec = data["seconds"]
             cat = data["category"]
             if cat == "deep_work":
@@ -353,7 +372,6 @@ class DistractionMonitor:
             m = sec // 60
             s = sec % 60
             time_str = f"{m}p {s}s" if m > 0 else f"{s}s"
-            pct = min(100, max(0, int((sec / actual_tracked) * 100)))
 
             breakdown.append({
                 "key": key,
@@ -361,7 +379,7 @@ class DistractionMonitor:
                 "category": cat,
                 "seconds": sec,
                 "time_str": time_str,
-                "percent": pct,
+                "percent": 0,
                 "title": data.get("last_title", "")
             })
 
@@ -406,6 +424,10 @@ class DistractionMonitor:
                     "title": "Thời gian các ca học đã hoàn thành"
                 })
 
+        # Calculate percentages after final actual_tracked total is settled
+        for b in breakdown:
+            b["percent"] = min(100, max(0, int((b["seconds"] / max(1, actual_tracked)) * 100)))
+
         productive_sec = deep_work_sec + online_study_sec
         total_recorded = deep_work_sec + online_study_sec + entertainment_sec
         # Purity percent based on actual tracked activity
@@ -435,8 +457,8 @@ class DistractionMonitor:
             "pure_str": fmt_time(productive_sec),
             "total_tracked_seconds": actual_tracked,
             "total_tracked_str": fmt_time(actual_tracked),
-            "incident_count": len(self.distraction_events),
+            "incident_count": len(events_snapshot),
             "allow_youtube_fb_study": self.allow_youtube_fb_study,
             "breakdown": breakdown,
-            "events": self.distraction_events
+            "events": events_snapshot
         }
