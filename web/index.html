@@ -5356,7 +5356,7 @@ body[data-fx="pixel"] .ambient-pill.active {
   </svg>
 
   <!-- ==================== MINI HUD FLOATING WIDGET ==================== -->
-  <div class="mini-hud-widget" id="miniHudWidget" ondblclick="pyCall('toggle_mini_mode')" title="Nhấp đúp hoặc bấm ◱ để phóng to giao diện">
+  <div class="mini-hud-widget" id="miniHudWidget" ondblclick="handleMiniHudDblClick(event)" title="Nhấp đúp vùng trống hoặc bấm ◱ để phóng to giao diện">
     <canvas id="miniCelestialCanvas" class="mini-celestial-canvas"></canvas>
     <div class="mini-hud-content">
       <div class="mini-hud-left">
@@ -5369,7 +5369,7 @@ body[data-fx="pixel"] .ambient-pill.active {
         </div>
       </div>
 
-      <div class="mini-hud-right">
+      <div class="mini-hud-right" ondblclick="event.stopPropagation()">
         <button class="mini-action-btn hero-play" id="miniPlayPauseBtn" onclick="handleMainActionClick()" title="Bắt đầu / Tạm dừng (Space)">
           <svg width="13" height="13" viewBox="0 0 24 24" id="miniPlayPauseIcon" fill="currentColor">
             <polygon points="5 3 19 12 5 21 5 3"/>
@@ -5381,7 +5381,7 @@ body[data-fx="pixel"] .ambient-pill.active {
         <button class="mini-action-btn" id="miniSkipBtn" onclick="pyCall('skip_phase')" title="Bỏ qua pha này">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
         </button>
-        <button class="mini-action-btn" id="miniExpandBtn" onclick="pyCall('toggle_mini_mode')" title="Phóng to cửa sổ đầy đủ (F8)">
+        <button class="mini-action-btn" id="miniExpandBtn" onclick="requestToggleMiniMode(event)" title="Phóng to cửa sổ đầy đủ (F8)">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
         </button>
         <button class="mini-action-btn close" id="miniCloseBtn" onclick="pyCall('close_app')" title="Đóng">
@@ -5437,7 +5437,7 @@ body[data-fx="pixel"] .ambient-pill.active {
       <button class="tb-btn" onclick="openLeisureModal()" title="Hẹn giờ giải lao tự do (F9)">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
       </button>
-      <button class="tb-btn" onclick="pyCall('toggle_mini_mode')" title="Thu nhỏ thành Mini HUD nổi trên màn hình (F8)">
+      <button class="tb-btn" onclick="requestToggleMiniMode(event)" title="Thu nhỏ thành Mini HUD nổi trên màn hình (F8)">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><rect x="12" y="9" width="8" height="6" rx="1" fill="currentColor"/></svg>
       </button>
       <button class="tb-btn" onclick="pyCall('minimize_app')" title="Thu nhỏ xuống Taskbar">
@@ -6511,11 +6511,31 @@ body[data-fx="pixel"] .ambient-pill.active {
       return Promise.resolve();
     }
 
+    let lastMiniToggleTime = 0;
+    function requestToggleMiniMode(e) {
+      if (e) {
+        e.stopPropagation();
+      }
+      const now = Date.now();
+      if (now - lastMiniToggleTime < 400) {
+        return;
+      }
+      lastMiniToggleTime = now;
+      pyCall('toggle_mini_mode');
+    }
+
+    function handleMiniHudDblClick(e) {
+      if (e && e.target && e.target.closest('.mini-action-btn, .mini-hud-right, button')) {
+        return;
+      }
+      requestToggleMiniMode(e);
+    }
+
     function handleTitlebarDblClick(e) {
       if (e.target.closest('.tb-btn') || e.target.closest('.cycle-pill-quick')) {
         return;
       }
-      pyCall('toggle_mini_mode');
+      requestToggleMiniMode(e);
     }
 
     function handleMainActionClick() {
@@ -6550,7 +6570,7 @@ body[data-fx="pixel"] .ambient-pill.active {
         }, 50);
       } else if (e.code === "F8" || (e.code === "KeyM" && (e.ctrlKey || e.altKey))) {
         e.preventDefault();
-        pyCall("toggle_mini_mode");
+        requestToggleMiniMode();
       } else if (e.code === "F9") {
         e.preventDefault();
         openLeisureModal();

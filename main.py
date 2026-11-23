@@ -246,6 +246,8 @@ class PomodoroApp:
 
         self.is_running = True
         self.is_mini_mode = False
+        self._mini_mode_lock = threading.Lock()
+        self._last_mini_toggle_ts = 0.0
         self.is_fullscreen_overlay = False
         self.current_distracted_hwnd = None
         self.app_mode = "study" # "study" (Học tập & Làm việc) or "eyecare" (Bảo vệ mắt)
@@ -315,6 +317,38 @@ class PomodoroApp:
 
     def _on_window_closed(self):
         self.on_close()
+
+    def _run_on_ui_thread(self, fn):
+        """
+        Non-blocking dispatcher to execute WinForms/Win32 UI mutations safely on the UI thread.
+        Prevents cross-thread SetWindowPos/TopMost deadlocks ('not responding' dialog).
+        """
+        if not self.window or not self.is_running:
+            return False
+        try:
+            native_form = getattr(self.window, 'native', None)
+            if native_form and hasattr(native_form, 'BeginInvoke'):
+                if hasattr(native_form, 'IsDisposed') and native_form.IsDisposed:
+                    return False
+                global DotNetAction
+                if DotNetAction is None:
+                    try:
+                        from System import Action as SysAction
+                        DotNetAction = SysAction
+                    except Exception:
+                        pass
+                if DotNetAction:
+                    def _dispatch_ui():
+                        try:
+                            if self.is_running and not (hasattr(native_form, 'IsDisposed') and native_form.IsDisposed):
+                                fn(native_form)
+                        except Exception:
+                            pass
+                    native_form.BeginInvoke(DotNetAction(_dispatch_ui))
+                    return True
+        except Exception:
+            pass
+        return False
 
     def eval_js(self, code):
         """
@@ -469,17 +503,19 @@ class PomodoroApp:
             self.restore_full_window()
         self.eval_js(f"window.showFrictionBarrier({json.dumps(title)});")
         self.sync_parking_to_js()
-        try:
-            native_form = getattr(self.window, 'native', None)
-            if native_form and hasattr(native_form, 'Handle'):
-                w_hwnd = native_form.Handle.ToInt32()
-                if w_hwnd:
-                    user32.ShowWindow(w_hwnd, 9) # SW_RESTORE (non-blocking)
-                    user32.SetForegroundWindow(w_hwnd)
-                    return
-            self.window.restore()
-        except Exception:
-            pass
+
+        def _bring_to_front(native_form):
+            w_hwnd = native_form.Handle.ToInt32() if hasattr(native_form, 'Handle') else 0
+            if w_hwnd:
+                if user32.IsIconic(w_hwnd):
+                    user32.ShowWindow(w_hwnd, 9) # SW_RESTORE
+                user32.SetForegroundWindow(w_hwnd)
+
+        if not self._run_on_ui_thread(_bring_to_front):
+            try:
+                self.window.restore()
+            except Exception:
+                pass
 
     def start_timer(self):
         if self.state == STATE_IDLE:
@@ -643,8 +679,12 @@ class PomodoroApp:
                     self.window.toggle_fullscreen()
                 elif not native_form:
                     self.window.toggle_fullscreen()
-                self.window.on_top = False
-                self.window.resize(520, 720)
+                def _restore_after_break(nf):
+                    nf.TopMost = False
+                    nf.resize(520, 720, 3)
+                if not self._run_on_ui_thread(_restore_after_break):
+                    self.window.on_top = False
+                    self.window.resize(520, 720)
             except Exception:
                 pass
 
@@ -678,42 +718,68 @@ class PomodoroApp:
     def toggle_mini_mode(self):
         if not self.window:
             return
-        if not self.is_mini_mode:
-            self.set_mini_mode(True)
-        else:
-            self.restore_full_window()
+        with self._mini_mode_lock:
+            now = time.monotonic()
+            if now - self._last_mini_toggle_ts < 0.35:
+                return
+            self._last_mini_toggle_ts = now
+            target = not self.is_mini_mode
+            self.is_mini_mode = target
+        self._apply_window_mode(target)
 
     def set_mini_mode(self, enabled=True):
-        self.is_mini_mode = enabled
         if not self.window:
             return
-        if enabled:
-            try:
-                self.window.resize(365, 96)
-                self.window.on_top = True
-                self.eval_js("document.body.classList.add('mini-mode');")
-            except Exception:
-                pass
-        else:
-            self.restore_full_window()
+        target = bool(enabled)
+        with self._mini_mode_lock:
+            self.is_mini_mode = target
+        self._apply_window_mode(target)
 
     def restore_full_window(self):
         """Restores window from mini HUD mode back to standard 520x720 normal size."""
         if not self.window:
             return
-        self.is_mini_mode = False
-        try:
-            self.window.resize(520, 720)
-            self.window.on_top = False
-            self.eval_js("document.body.classList.remove('mini-mode');")
-            native_form = getattr(self.window, 'native', None)
-            if native_form and hasattr(native_form, 'Handle'):
-                w_hwnd = native_form.Handle.ToInt32()
+        with self._mini_mode_lock:
+            self.is_mini_mode = False
+        self._apply_window_mode(False)
+
+    def _apply_window_mode(self, target_mini):
+        """Atomically applies window size, TopMost, and CSS mini-mode on the WinForms UI thread."""
+        def _apply_on_ui(native_form):
+            with self._mini_mode_lock:
+                is_mini = self.is_mini_mode
+
+            browser = getattr(native_form, 'browser', None)
+            wv = getattr(browser, 'webview', None)
+            w_hwnd = native_form.Handle.ToInt32() if hasattr(native_form, 'Handle') else 0
+
+            if is_mini:
+                native_form.resize(365, 96, 3)  # FixPoint.NORTH (1) | FixPoint.WEST (2)
+                native_form.TopMost = True
+                if wv:
+                    wv.ExecuteScriptAsync("document.body.classList.add('mini-mode');")
+            else:
+                if w_hwnd and user32.IsIconic(w_hwnd):
+                    user32.ShowWindow(w_hwnd, 9)  # SW_RESTORE
+                native_form.resize(520, 720, 3)
+                native_form.TopMost = False
                 if w_hwnd:
-                    user32.ShowWindow(w_hwnd, 9) # SW_RESTORE
                     user32.SetForegroundWindow(w_hwnd)
-        except Exception:
-            pass
+                if wv:
+                    wv.ExecuteScriptAsync("document.body.classList.remove('mini-mode');")
+
+        if not self._run_on_ui_thread(_apply_on_ui):
+            try:
+                if target_mini:
+                    self.window.resize(365, 96)
+                    self.window.on_top = True
+                    self.eval_js("document.body.classList.add('mini-mode');")
+                else:
+                    self.window.resize(520, 720)
+                    self.window.on_top = False
+                    self.eval_js("document.body.classList.remove('mini-mode');")
+            except Exception:
+                pass
 
     def start_in_app_update(self, download_url=None):
         if getattr(self, '_is_updating', False):
