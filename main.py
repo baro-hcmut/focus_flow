@@ -493,11 +493,11 @@ class PomodoroApp:
         if self.config.get("wrapup_nudge_enabled", True) and self.remaining_seconds == 180:
             self.eval_js("window.showToast('🏁 Còn 3 phút! Hãy tổng kết nội dung và hoàn thiện mục tiêu.');")
 
-        # 20-20-20 Eye Care Micro-Blink (e.g. at 20m and 40m marks)
+        # 20-20-20 Eye Care Micro-Blink (every 20m while >5m remains before main break)
         if self.config.get("eye_care_enabled", True):
             elapsed = self.focus_duration - self.remaining_seconds
-            if elapsed in (1200, 2400):
-                self.eval_js("window.showToast('👀 Nhắc nhở 20-20-20: Đảo mắt nhìn xa 6 mét trong 20 giây để giảm căng thẳng cho mắt!');")
+            if elapsed > 0 and elapsed % 1200 == 0 and self.remaining_seconds > 300:
+                self.eval_js("window.startEyeMicroBreak && window.startEyeMicroBreak(20);")
 
     def _on_distraction_barrier(self, title, hwnd):
         """Called when DistractionMonitor catches an off-task window."""

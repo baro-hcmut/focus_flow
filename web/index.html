@@ -5507,7 +5507,7 @@ body[data-fx="pixel"] .ambient-pill.active {
         <div class="mini-digits-row">
           <span class="mini-digits" id="miniTimerDigits">50:00</span>
         </div>
-        <div class="mini-status-row">
+        <div class="mini-status-row" id="miniStatusRow" onclick="if(typeof eyeMicroBreakRemaining!=='undefined' && eyeMicroBreakRemaining>0){event.stopPropagation(); dismissEyeMicroBreak();}" title="">
           <span class="mini-status-dot" id="miniStatusDot"></span>
           <span class="mini-status-text" id="miniStatusText">Sẵn sàng học</span>
         </div>
@@ -7660,6 +7660,129 @@ function copyPuritySummary() {
     }
 
     // =========================================================================
+    // 20-20-20 IN-PLACE EYE CARE MICRO-BREAK (No popup, no window resize)
+    // =========================================================================
+    let eyeMicroBreakRemaining = 0;
+    let eyeMicroBreakTotal = 20;
+    let eyeMicroBreakTimer = null;
+
+    function playGentleEyeChime(isEnd = false) {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = (window.lofiAudio && window.lofiAudio.ctx) ? window.lofiAudio.ctx : new AudioCtx();
+        if (ctx.state === "suspended") ctx.resume().catch(() => {});
+
+        const now = ctx.currentTime;
+        const freqs = isEnd ? [659.25] : [587.33, 783.99];
+        freqs.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(freq, now + idx * 0.14);
+          gain.gain.setValueAtTime(0.0001, now + idx * 0.14);
+          gain.gain.linearRampToValueAtTime(isEnd ? 0.055 : 0.07, now + idx * 0.14 + 0.03);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.14 + 0.42);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + idx * 0.14);
+          osc.stop(now + idx * 0.14 + 0.45);
+        });
+      } catch (e) {}
+    }
+
+    function applyEyeMicroBreakUI() {
+      const active = (eyeMicroBreakRemaining > 0 && appState === "FOCUS");
+      const miniDot = document.getElementById("miniStatusDot");
+      const miniText = document.getElementById("miniStatusText");
+      const miniFill = document.getElementById("miniProgressFill");
+      const miniRow = document.getElementById("miniStatusRow");
+
+      if (active) {
+        if (miniDot) miniDot.style.background = "#38bdf8";
+        if (miniText) {
+          miniText.innerText = `Nhìn xa 6m · ${eyeMicroBreakRemaining}s`;
+          miniText.style.color = "#7dd3fc";
+        }
+        if (miniFill) {
+          miniFill.style.background = "#38bdf8";
+          miniFill.style.width = `${Math.max(0, Math.min(100, (eyeMicroBreakRemaining / eyeMicroBreakTotal) * 100))}%`;
+        }
+        if (miniRow) {
+          miniRow.style.cursor = "pointer";
+          miniRow.title = "Bấm để bỏ qua nhắc nghỉ mắt";
+        }
+
+        const badge = document.getElementById("dialPhaseBadge");
+        const label = document.getElementById("dialPhaseLabel");
+        const dot = document.getElementById("dialPhaseDot");
+        const sub = document.getElementById("dialSubInstruction");
+        if (label) label.innerText = `Nhìn xa 6m · ${eyeMicroBreakRemaining}s`;
+        if (dot) dot.style.background = "#38bdf8";
+        if (badge) {
+          badge.style.color = "#7dd3fc";
+          badge.style.background = "rgba(56, 189, 248, 0.1)";
+          badge.style.borderColor = "rgba(56, 189, 248, 0.25)";
+          badge.style.cursor = "pointer";
+          badge.onclick = () => dismissEyeMicroBreak();
+        }
+        if (sub) sub.innerText = "Nghỉ mắt 20-20-20 • Bấm nhãn trên để bỏ qua";
+      } else {
+        if (miniText) miniText.style.color = "";
+        if (miniRow) {
+          miniRow.style.cursor = "";
+          miniRow.title = "";
+        }
+        const badge = document.getElementById("dialPhaseBadge");
+        if (badge) {
+          badge.style.cursor = "";
+          badge.onclick = null;
+        }
+      }
+    }
+
+    function dismissEyeMicroBreak() {
+      clearInterval(eyeMicroBreakTimer);
+      eyeMicroBreakTimer = null;
+      eyeMicroBreakRemaining = 0;
+      applyEyeMicroBreakUI();
+      // Trigger immediate normal UI refresh using cached state
+      if (typeof remainingSeconds !== "undefined") {
+        window.updateTimer(remainingSeconds, totalTargetSeconds, appState, currentSession, targetSessions, window.lastStats, currentAppMode || currentMode);
+      }
+    }
+
+    window.startEyeMicroBreak = function(seconds = 20) {
+      if (appState !== "FOCUS") return;
+      clearInterval(eyeMicroBreakTimer);
+      eyeMicroBreakTotal = Math.max(5, Number(seconds) || 20);
+      eyeMicroBreakRemaining = eyeMicroBreakTotal;
+      playGentleEyeChime(false);
+      applyEyeMicroBreakUI();
+
+      eyeMicroBreakTimer = setInterval(() => {
+        if (appState !== "FOCUS") {
+          clearInterval(eyeMicroBreakTimer);
+          eyeMicroBreakTimer = null;
+          eyeMicroBreakRemaining = 0;
+          applyEyeMicroBreakUI();
+          return;
+        }
+        eyeMicroBreakRemaining--;
+        if (eyeMicroBreakRemaining <= 0) {
+          clearInterval(eyeMicroBreakTimer);
+          eyeMicroBreakTimer = null;
+          eyeMicroBreakRemaining = 0;
+          playGentleEyeChime(true);
+          applyEyeMicroBreakUI();
+          window.updateTimer(remainingSeconds, totalTargetSeconds, appState, currentSession, targetSessions, window.lastStats, currentAppMode || currentMode);
+        } else {
+          applyEyeMicroBreakUI();
+        }
+      }, 1000);
+    };
+
+    // =========================================================================
     // TIMER ENGINE & PROGRESS (Called every 1s from Python)
     // =========================================================================
     window.updateTimer = function(remaining, total, state, session, target, stats, mode) {
@@ -7906,6 +8029,15 @@ function copyPuritySummary() {
           : `<span style="text-decoration:underline; color:#38bdf8;">[Xem chi tiết Web/App]</span>`;
         document.getElementById("footerStatsLabel").innerHTML =
           `Hôm nay: ${stats.completed || 0} ca (${stats.minutes || 0} phút) • ${footerRightTxt}`;
+      }
+
+      if (state !== "FOCUS" && eyeMicroBreakRemaining > 0) {
+        clearInterval(eyeMicroBreakTimer);
+        eyeMicroBreakTimer = null;
+        eyeMicroBreakRemaining = 0;
+        applyEyeMicroBreakUI();
+      } else if (state === "FOCUS" && eyeMicroBreakRemaining > 0) {
+        applyEyeMicroBreakUI();
       }
     };
 
