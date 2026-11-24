@@ -1,6 +1,9 @@
 import json
 import os
 import sys
+import threading
+
+_CONFIG_LOCK = threading.Lock()
 
 if getattr(sys, 'frozen', False):
     ROOT_DIR = os.path.dirname(sys.executable)
@@ -27,20 +30,21 @@ DEFAULT_CONFIG = {
 }
 
 def load_config():
-    if not os.path.exists(CONFIG_FILE):
-        save_config(DEFAULT_CONFIG)
-        return DEFAULT_CONFIG.copy()
-    try:
-        with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            merged = DEFAULT_CONFIG.copy()
-            merged.update(data)
-            return merged
-    except Exception:
-        return DEFAULT_CONFIG.copy()
+    with _CONFIG_LOCK:
+        if not os.path.exists(CONFIG_FILE):
+            _write_config_unlocked(DEFAULT_CONFIG)
+            return DEFAULT_CONFIG.copy()
+        try:
+            with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                merged = DEFAULT_CONFIG.copy()
+                merged.update(data)
+                return merged
+        except Exception:
+            return DEFAULT_CONFIG.copy()
 
-def save_config(cfg):
-    temp_file = CONFIG_FILE + '.tmp'
+def _write_config_unlocked(cfg):
+    temp_file = f"{CONFIG_FILE}.{os.getpid()}.{threading.get_ident()}.tmp"
     try:
         with open(temp_file, 'w', encoding='utf-8') as f:
             json.dump(cfg, f, indent=4, ensure_ascii=False)
@@ -48,8 +52,17 @@ def save_config(cfg):
             os.replace(temp_file, CONFIG_FILE)
     except Exception as e:
         try:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+        except Exception:
+            pass
+        try:
             with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
                 json.dump(cfg, f, indent=4, ensure_ascii=False)
         except Exception:
             pass
         print(f"Error saving config: {e}")
+
+def save_config(cfg):
+    with _CONFIG_LOCK:
+        _write_config_unlocked(cfg)

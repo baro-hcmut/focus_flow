@@ -58,7 +58,7 @@ STATE_FOCUS = "FOCUS"
 STATE_BREAK = "BREAK"
 STATE_PAUSED = "PAUSED"
 
-APP_VERSION = "2.0.1"
+APP_VERSION = "2.0.2"
 GITHUB_REPO = "baro-hcmut/focus_flow"
 
 def parse_version_tuple(v_str):
@@ -721,7 +721,7 @@ class PomodoroApp:
                     self.window.toggle_fullscreen()
                 def _restore_after_break(nf):
                     nf.TopMost = False
-                    nf.resize(520, 720, 3)
+                    nf.resize(520, 720, webview.window.FixPoint.NORTH | webview.window.FixPoint.WEST)
                 if not self._run_on_ui_thread(_restore_after_break):
                     self.window.on_top = False
                     self.window.resize(520, 720)
@@ -793,15 +793,16 @@ class PomodoroApp:
             wv = getattr(browser, 'webview', None)
             w_hwnd = native_form.Handle.ToInt32() if hasattr(native_form, 'Handle') else 0
 
+            fp_nw = webview.window.FixPoint.NORTH | webview.window.FixPoint.WEST
             if is_mini:
-                native_form.resize(365, 96, 3)  # FixPoint.NORTH (1) | FixPoint.WEST (2)
+                native_form.resize(365, 96, fp_nw)
                 native_form.TopMost = True
                 if wv:
                     wv.ExecuteScriptAsync("document.body.classList.add('mini-mode');")
             else:
                 if w_hwnd and user32.IsIconic(w_hwnd):
                     user32.ShowWindow(w_hwnd, 9)  # SW_RESTORE
-                native_form.resize(520, 720, 3)
+                native_form.resize(520, 720, fp_nw)
                 native_form.TopMost = False
                 if w_hwnd:
                     user32.SetForegroundWindow(w_hwnd)
