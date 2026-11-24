@@ -7650,9 +7650,24 @@ function copyPuritySummary() {
     }
 
     function toggleAppCategory(key, currentCat) {
-      const newCat = (currentCat === "entertainment") ? "online_study" : "entertainment";
-      const scopeArg = (analyticsScope === "sessions") ? "session" : "daily";
-      const sessArg = (analyticsScope === "sessions") ? selectedSessionNum : null;
+      let newCat = "entertainment";
+      if (currentCat === "entertainment") {
+        newCat = String(key || "").endsWith(".exe") ? "deep_work" : "online_study";
+      }
+      let scopeArg = "daily";
+      let sessArg = null;
+      if (analyticsScope === "current") {
+        scopeArg = "current";
+      } else if (analyticsScope === "sessions") {
+        const archived = (analyticsBundle && analyticsBundle.sessions) ? analyticsBundle.sessions : [];
+        const isArchived = archived.some(s => s.session === selectedSessionNum);
+        if (isArchived) {
+          scopeArg = "session";
+          sessArg = selectedSessionNum;
+        } else {
+          scopeArg = "current";
+        }
+      }
       pyCall("reclassify_usage_item", key, newCat, scopeArg, sessArg).then(() => {
         loadAnalyticsTab();
         showToast("Đã cập nhật phân loại");

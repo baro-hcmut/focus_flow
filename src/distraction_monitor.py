@@ -315,15 +315,47 @@ class DistractionMonitor:
         """Allows YouTube / Facebook to be counted as online study tools."""
         self.allow_youtube_fb_study = bool(enabled)
 
+    @staticmethod
+    def _reclassify_store(store, app_key: str, new_category: str) -> bool:
+        if app_key not in store:
+            return False
+        dual_prefixes = ("youtube", "facebook", "reddit", "twitter", "x")
+        base_plat = None
+        for p in dual_prefixes:
+            if app_key in (f"{p}_study", f"{p}_ent"):
+                base_plat = p
+                break
+
+        if base_plat is not None:
+            target_is_study = new_category in ("online_study", "deep_work")
+            target_key = f"{base_plat}_study" if target_is_study else f"{base_plat}_ent"
+            if target_key == app_key:
+                store[app_key]["category"] = new_category
+                return True
+            plat_label = "YouTube" if base_plat == "youtube" else ("Facebook" if base_plat == "facebook" else base_plat.upper() if base_plat == "x" else base_plat.capitalize())
+            target_name = f"{plat_label} • {'Học tập' if target_is_study else 'Giải trí'}"
+            old_entry = store.pop(app_key)
+            if target_key not in store:
+                old_entry["key"] = target_key
+                old_entry["name"] = target_name
+                old_entry["category"] = "online_study" if target_is_study else "entertainment"
+                old_entry["manual"] = None
+                store[target_key] = old_entry
+            else:
+                store[target_key]["seconds"] = store[target_key].get("seconds", 0) + old_entry.get("seconds", 0)
+            return True
+
+        store[app_key]["category"] = new_category
+        store[app_key]["manual"] = new_category
+        return True
+
     def reclassify_item(self, app_key: str, new_category: str, scope: str = "daily", session_num=None):
         """Changes an app's category in daily, current session, or a specific completed session."""
         updated = False
         with self._data_lock:
             if scope in ("daily", "current"):
                 for store in (self.usage_records, self.session_records):
-                    if app_key in store:
-                        store[app_key]["category"] = new_category
-                        store[app_key]["manual"] = new_category
+                    if self._reclassify_store(store, app_key, new_category):
                         updated = True
             if scope == "session" and session_num is not None:
                 for sess in self.completed_sessions_today:
@@ -343,15 +375,17 @@ class DistractionMonitor:
                             else:
                                 dist_s += sec
                         if updated:
-                            total_s = deep_s + online_s + dist_s
+                            total_s = max(1, deep_s + online_s + dist_s)
                             prod_s = deep_s + online_s
+                            for item in sess.get("breakdown", []):
+                                item["percent"] = min(100, max(0, int((item.get("seconds", 0) / total_s) * 100)))
                             sess["deep_work_seconds"] = deep_s
                             sess["online_study_seconds"] = online_s
                             sess["distracted_seconds"] = dist_s
                             sess["deep_work_str"] = self._fmt_time(deep_s)
                             sess["online_study_str"] = self._fmt_time(online_s)
                             sess["distracted_str"] = self._fmt_time(dist_s)
-                            sess["purity_percent"] = max(0, min(100, int((prod_s / total_s) * 100))) if total_s > 0 else 100
+                            sess["purity_percent"] = max(0, min(100, int((prod_s / total_s) * 100))) if (deep_s + online_s + dist_s) > 0 else 100
                         break
         if updated:
             self.save_daily_stats()
