@@ -10,8 +10,17 @@ kernel32 = ctypes.windll.kernel32
 STUDY_KEYWORDS = [
     "bài giảng", "bai giang", "toán", "toan", "vật lý", "vat ly", "hóa học", "hoa hoc",
     "tiếng anh", "tieng anh", "ielts", "toeic", "lập trình", "lap trinh", "python",
-    "javascript", "c++", "lecture", "tutorial", "khoá học", "khoa hoc", "course",
+    "javascript", "typescript", "c++", "react", "docker", "sql", "github", "stackoverflow",
+    "leetcode", "hackerrank", "codeforces", "mdn", "w3schools",
+    "lecture", "tutorial", "khoá học", "khoa hoc", "khóa học", "course",
     "ôn thi", "on thi", "giáo trình", "giao trinh", "tài liệu", "tai lieu",
+    "vi phân", "vi phan", "tích phân", "tich phan", "đạo hàm", "dao ham",
+    "ma trận", "ma tran", "đại số", "dai so", "xác suất", "xac suat",
+    "thống kê", "thong ke", "giải tích", "giai tich", "giải thuật", "giai thuat",
+    "cấu trúc dữ liệu", "cau truc du lieu", "mạch điện", "mach dien",
+    "giải đề", "giai de", "chữa đề", "chua de", "chương ", "chuong ",
+    "cs50", "3blue1brown", "khan academy", "freecodecamp", "28tech",
+    "hocmai", "học mãi", "tuyensinh247", "organic chemistry tutor", "mit opencourseware",
     "nhóm học", "classroom", "meet", "zoom", "teams", "drive", "docs", "sheets",
     "slides", "word", "excel", "powerpoint", "pdf", "acrobat", "foxit", "sumatra",
     "obsidian", "notion", "anki", "chatgpt", "gemini", "claude", "coursera", "edx", "udemy"
@@ -29,6 +38,11 @@ ENTERTAINMENT_KEYWORDS = [
 FLEXIBLE_PLATFORMS = [
     "youtube", "facebook", "fb.com", "reddit", "twitter", "x.com"
 ]
+
+BROWSER_SUFFIXES = (
+    " - google chrome", " - brave", " - microsoft edge", " - mozilla firefox",
+    " - cốc cốc", " - opera", " - vivaldi"
+)
 
 def get_active_window_info():
     """
@@ -84,34 +98,47 @@ def get_active_window_info():
 
 class DistractionMonitor:
     """
-    Intelligent monitor tracking both productive study and off-task usage.
+    Tracks productive study and off-task usage both per-session and daily.
     Distinguishes deep work, online study (YouTube/FB lectures), and entertainment.
     """
     def __init__(self, brain_dump_manager=None, on_barrier_trigger=None):
         self.brain_dump_manager = brain_dump_manager
         self.on_barrier_trigger = on_barrier_trigger
-        
+
         self.is_monitoring = False
         self.barrier_enabled = True
-        self.allow_youtube_fb_study = False # Toggle: allow YouTube/FB as study tools
-        
-        # Tracking dictionaries
-        # key -> {"name": str, "category": "deep_work"|"online_study"|"entertainment", "seconds": int, "manual": str|None}
-        self.usage_records = {}
-        self.distraction_events = [] # list of {"app": str, "title": str, "time": str, "duration": int}
-        self.allowed_hwnds = set()
-        self.snoozed_hwnds = {} # hwnd -> expiry_timestamp (temporary 1-2 minutes access)
-        self.last_distraction_time = 0
-        self.in_distraction = False
+        self.allow_youtube_fb_study = False      # Global UI toggle: YouTube/FB study mode
+        self.session_youtube_study_temp = False  # Per-session playlist unlock (auto-resets after session)
+        self.custom_study_keywords = []          # User-defined channel/topic keywords
+
         self._thread = None
         self._data_lock = threading.Lock()
+
+        # Daily tracking dictionaries
+        self.usage_records = {}
+        self.distraction_events = []
+        self.total_tracked_seconds = 0
+        self.completed_sessions_today = []
+
+        # Current-session-only tracking dictionaries
+        self.session_records = {}
+        self.session_events = []
+        self.session_total_seconds = 0
+        self.session_start_time = time.strftime("%H:%M")
+
+        # Per-video / per-window allowlists
+        self.allowed_hwnds = set()
+        self.allowed_video_titles = set()
+        self.snoozed_hwnds = {}
+        self.last_distraction_time = 0
+        self.in_distraction = False
         self.current_distracted_hwnd = None
         self.last_distracted_key = None
-        self.total_tracked_seconds = 0
+        self.last_distracted_title = ""
+        self._yt_homepage_since = 0.0
         self.last_save_time = time.time()
         self.current_date = time.strftime("%Y-%m-%d")
 
-        # Load persisted daily stats for today if available
         self._load_today_persisted_stats()
 
     def on_date_changed(self, new_date_str):
@@ -123,15 +150,29 @@ class DistractionMonitor:
                 self.usage_records = {}
                 self.total_tracked_seconds = 0
                 self.distraction_events = []
-                self.in_distraction = False
-                self.last_distracted_key = None
-                self.allowed_hwnds.clear()
-                self.snoozed_hwnds.clear()
+                self.completed_sessions_today = []
+                self._reset_session_unlocked()
             self._load_today_persisted_stats()
         except Exception:
             pass
 
+    def _reset_session_unlocked(self):
+        self.session_records = {}
+        self.session_events = []
+        self.session_total_seconds = 0
+        self.session_start_time = time.strftime("%H:%M")
+        self.session_youtube_study_temp = False
+        self.in_distraction = False
+        self.last_distracted_key = None
+        self.last_distracted_title = ""
+        self._yt_homepage_since = 0.0
+        self.allowed_hwnds.clear()
+        self.snoozed_hwnds.clear()
+
     def start_monitoring(self):
+        with self._data_lock:
+            if self.session_total_seconds == 0:
+                self.session_start_time = time.strftime("%H:%M")
         if self.is_monitoring:
             return
         self.is_monitoring = True
@@ -144,33 +185,85 @@ class DistractionMonitor:
         self.save_daily_stats()
 
     def reset_stats(self):
-        # Do not wipe historical daily usage on timer adjustment!
-        self.in_distraction = False
-        self.allowed_hwnds.clear()
-        self.snoozed_hwnds.clear()
+        """Resets only the active uncompleted session without wiping daily history."""
+        with self._data_lock:
+            self._reset_session_unlocked()
+
+    def reset_current_session(self):
+        """Alias used after archiving a completed session."""
+        self.reset_stats()
+
+    def set_custom_study_keywords(self, keywords):
+        if isinstance(keywords, str):
+            parsed = [k.strip().lower() for k in keywords.split(",") if k.strip()]
+        elif isinstance(keywords, (list, tuple)):
+            parsed = [str(k).strip().lower() for k in keywords if str(k).strip()]
+        else:
+            parsed = []
+        with self._data_lock:
+            self.custom_study_keywords = parsed
+
+    def allow_current_video_as_study(self):
+        """Allows ONLY the specific video/page title that triggered the barrier."""
+        clean_title = ""
+        with self._data_lock:
+            clean_title = (self.last_distracted_title or "").strip().lower()
+            if clean_title and clean_title != "youtube":
+                self.allowed_video_titles.add(clean_title)
+            elif self.current_distracted_hwnd:
+                self.allowed_hwnds.add(self.current_distracted_hwnd)
+            self.in_distraction = False
+        return clean_title
+
+    def allow_session_youtube_study(self):
+        """Allows YouTube/FB for the remainder of the current focus session only."""
+        with self._data_lock:
+            self.session_youtube_study_temp = True
+            self.in_distraction = False
 
     def snooze_hwnd(self, hwnd, duration_seconds=120):
-        """Temporarily allow entertainment on this window for duration_seconds (e.g. 1-2 minutes)."""
+        """Temporarily allow entertainment on this window for duration_seconds (e.g. 2 minutes)."""
         if hwnd:
             self.snoozed_hwnds[hwnd] = time.time() + duration_seconds
             self.in_distraction = False
 
+    def _migrate_legacy_records(self, records):
+        """Splits legacy 'youtube' key into 'youtube_study' or 'youtube_ent' cleanly."""
+        if not isinstance(records, dict):
+            return {}
+        if "youtube" in records:
+            old = records.pop("youtube")
+            cat = old.get("category", "entertainment")
+            new_key = "youtube_study" if cat in ("online_study", "deep_work") else "youtube_ent"
+            new_name = "YouTube • Học tập" if new_key == "youtube_study" else "YouTube • Giải trí"
+            if new_key not in records:
+                old["key"] = new_key
+                old["name"] = new_name
+                records[new_key] = old
+            else:
+                records[new_key]["seconds"] = records[new_key].get("seconds", 0) + old.get("seconds", 0)
+        return records
+
     def _load_today_persisted_stats(self):
-        """Loads today's accumulated tracking records from config.json so they survive app restarts."""
+        """Loads today's accumulated tracking records and session snapshots from config.json."""
         try:
             from config_manager import load_config
             cfg = load_config()
+            self.set_custom_study_keywords(cfg.get("custom_study_keywords", []))
             today_key = time.strftime("%Y-%m-%d")
             daily_usage = cfg.get("daily_usage", {}).get(today_key, {})
-            if daily_usage and "records" in daily_usage:
-                self.usage_records = daily_usage.get("records", {})
-                self.total_tracked_seconds = daily_usage.get("total_seconds", sum(r.get("seconds", 0) for r in self.usage_records.values()))
-                self.distraction_events = daily_usage.get("events", [])
+            if daily_usage:
+                records = self._migrate_legacy_records(daily_usage.get("records", {}))
+                with self._data_lock:
+                    self.usage_records = records
+                    self.total_tracked_seconds = daily_usage.get("total_seconds", sum(r.get("seconds", 0) for r in records.values()))
+                    self.distraction_events = daily_usage.get("events", [])
+                    self.completed_sessions_today = daily_usage.get("sessions_detail", [])
         except Exception:
             pass
 
     def save_daily_stats(self, date_key=None):
-        """Flushes today's accumulated web/app tracking records to config.json."""
+        """Flushes today's accumulated web/app tracking records and per-session snapshots to config.json."""
         try:
             from config_manager import load_config, save_config
             with self._data_lock:
@@ -178,29 +271,88 @@ class DistractionMonitor:
                 records_copy = {k: dict(v) for k, v in self.usage_records.items()}
                 total_sec = self.total_tracked_seconds
                 events_copy = list(self.distraction_events[-30:])
+                sessions_copy = list(self.completed_sessions_today)
             cfg = load_config()
             daily_usage = cfg.setdefault("daily_usage", {})
             daily_usage[today_key] = {
                 "records": records_copy,
                 "total_seconds": total_sec,
-                "events": events_copy
+                "events": events_copy,
+                "sessions_detail": sessions_copy
             }
             save_config(cfg)
         except Exception:
             pass
 
+    def archive_completed_session(self, session_num, actual_minutes, goal_text=""):
+        """Snapshots the just-finished session into today's sessions_detail and resets session counters."""
+        end_time_str = time.strftime("%H:%M")
+        report = self.get_session_purity_stats(max(1, actual_minutes))
+        snapshot = {
+            "session": int(session_num),
+            "start_time": self.session_start_time,
+            "end_time": end_time_str,
+            "minutes": int(actual_minutes),
+            "goal": str(goal_text or "").strip(),
+            "purity_percent": report["purity_percent"],
+            "deep_work_seconds": report["deep_work_seconds"],
+            "deep_work_str": report["deep_work_str"],
+            "online_study_seconds": report["online_study_seconds"],
+            "online_study_str": report["online_study_str"],
+            "distracted_seconds": report["distracted_seconds"],
+            "distracted_str": report["distracted_str"],
+            "total_tracked_seconds": report["total_tracked_seconds"],
+            "total_tracked_str": report["total_tracked_str"],
+            "breakdown": report["breakdown"],
+        }
+        with self._data_lock:
+            self.completed_sessions_today.append(snapshot)
+            self._reset_session_unlocked()
+        self.save_daily_stats()
+        return snapshot
+
     def set_youtube_fb_study_mode(self, enabled: bool):
         """Allows YouTube / Facebook to be counted as online study tools."""
         self.allow_youtube_fb_study = bool(enabled)
 
-    def reclassify_item(self, app_key: str, new_category: str):
-        """Allows the user to manually change an app's category (e.g. from entertainment to study)."""
+    def reclassify_item(self, app_key: str, new_category: str, scope: str = "daily", session_num=None):
+        """Changes an app's category in daily, current session, or a specific completed session."""
         updated = False
         with self._data_lock:
-            if app_key in self.usage_records:
-                self.usage_records[app_key]["category"] = new_category
-                self.usage_records[app_key]["manual"] = new_category
-                updated = True
+            if scope in ("daily", "current"):
+                for store in (self.usage_records, self.session_records):
+                    if app_key in store:
+                        store[app_key]["category"] = new_category
+                        store[app_key]["manual"] = new_category
+                        updated = True
+            if scope == "session" and session_num is not None:
+                for sess in self.completed_sessions_today:
+                    if sess.get("session") == int(session_num):
+                        deep_s = 0
+                        online_s = 0
+                        dist_s = 0
+                        for item in sess.get("breakdown", []):
+                            if item.get("key") == app_key:
+                                item["category"] = new_category
+                                updated = True
+                            sec = item.get("seconds", 0)
+                            if item.get("category") == "deep_work":
+                                deep_s += sec
+                            elif item.get("category") == "online_study":
+                                online_s += sec
+                            else:
+                                dist_s += sec
+                        if updated:
+                            total_s = deep_s + online_s + dist_s
+                            prod_s = deep_s + online_s
+                            sess["deep_work_seconds"] = deep_s
+                            sess["online_study_seconds"] = online_s
+                            sess["distracted_seconds"] = dist_s
+                            sess["deep_work_str"] = self._fmt_time(deep_s)
+                            sess["online_study_str"] = self._fmt_time(online_s)
+                            sess["distracted_str"] = self._fmt_time(dist_s)
+                            sess["purity_percent"] = max(0, min(100, int((prod_s / total_s) * 100))) if total_s > 0 else 100
+                        break
         if updated:
             self.save_daily_stats()
 
@@ -212,20 +364,51 @@ class DistractionMonitor:
                 self.save_daily_stats()
             time.sleep(1)
 
+    @staticmethod
+    def _extract_clean_title(raw_title: str) -> str:
+        t = (raw_title or "").strip()
+        lower = t.lower()
+        for suf in BROWSER_SUFFIXES:
+            if lower.endswith(suf):
+                t = t[:len(t) - len(suf)].strip()
+                lower = t.lower()
+                break
+        if lower.endswith(" - youtube"):
+            t = t[:-10].strip()
+        return t
+
+    @staticmethod
+    def _is_youtube_homepage(raw_title: str) -> bool:
+        t = (raw_title or "").strip().lower()
+        for suf in BROWSER_SUFFIXES:
+            if t.endswith(suf):
+                t = t[:len(t) - len(suf)].strip()
+                break
+        return t in ("youtube", "youtube.com", "")
+
+    def _has_study_signal(self, title_lower: str) -> bool:
+        if any(skw in title_lower for skw in STUDY_KEYWORDS):
+            return True
+        if any(ckw in title_lower for ckw in self.custom_study_keywords):
+            return True
+        return False
+
     def _classify_window(self, raw_title: str, proc_name: str):
         """
-        Classifies active window into:
-        - "deep_work": Local study software, editors, readers, office, or desktop tools.
-        - "online_study": Online lecture videos, course materials, learning portals.
-        - "entertainment": TikTok, Manga/truyen, Games, Shopping, Shorts/Reels, or off-task browsing.
-        Returns (app_key, display_name, category)
+        Classifies active window into ("deep_work", "online_study", "entertainment").
+        Returns (app_key, display_name, category, clean_title).
         """
         title_lower = raw_title.lower()
         full_text = f"{title_lower} {proc_name}"
+        clean_title = self._extract_clean_title(raw_title)
+        clean_lower = clean_title.lower()
+        has_study_kw = self._has_study_signal(title_lower)
 
-        # 1. Check if definitely entertainment
+        # 1. Explicit entertainment check (skip 'game' false-positive if study keywords present)
         for kw in ENTERTAINMENT_KEYWORDS:
             if kw in full_text:
+                if kw == "game" and has_study_kw:
+                    continue
                 display_name = kw.capitalize()
                 if kw in ("truyen", "manga", "manhwa", "comic", "webtruyen", "truyenfull", "nettruyen", "truyenqq"):
                     display_name = "Đọc Truyện / Manga"
@@ -233,32 +416,34 @@ class DistractionMonitor:
                     display_name = "Game / Trò chơi"
                 elif kw in ("shopee", "lazada", "tiki"):
                     display_name = "Mua sắm Online"
-                return kw, display_name, "entertainment"
+                elif kw == "shorts":
+                    display_name = "YouTube Shorts" if "youtube" in full_text else "Video ngắn"
+                elif kw == "tiktok":
+                    display_name = "TikTok"
+                return kw, display_name, "entertainment", clean_title
 
-        # 2. Check flexible platforms (YouTube, Facebook, etc.)
+        # 2. Flexible dual-use platforms (split into distinct _study vs _ent keys!)
         for plat in FLEXIBLE_PLATFORMS:
             if plat in full_text:
                 plat_name = "YouTube" if "youtube" in plat else ("Facebook" if "facebook" in plat or "fb.com" in plat else plat.capitalize())
-                # If explicit study keywords appear in title
-                has_study_kw = any(skw in title_lower for skw in STUDY_KEYWORDS)
-                
-                if self.allow_youtube_fb_study or has_study_kw:
-                    return plat, f"{plat_name} (Bài giảng / Học)", "online_study"
-                else:
-                    return plat, f"{plat_name} (Chưa gắn nhãn học)", "entertainment"
+                plat_id = "facebook" if plat == "fb.com" else ("x" if plat == "x.com" else plat)
+                is_video_approved = bool(clean_lower and clean_lower in self.allowed_video_titles)
+                is_study = self.allow_youtube_fb_study or self.session_youtube_study_temp or has_study_kw or is_video_approved
 
-        # 3. Check browsers or study keywords
+                if is_study:
+                    return f"{plat_id}_study", f"{plat_name} • Học tập", "online_study", clean_title
+                else:
+                    return f"{plat_id}_ent", f"{plat_name} • Giải trí", "entertainment", clean_title
+
+        # 3. Browsers
         is_browser = proc_name in ("chrome.exe", "msedge.exe", "firefox.exe", "brave.exe", "opera.exe", "coccoc.exe")
         if is_browser:
-            # Browser tab
-            has_study_kw = any(skw in title_lower for skw in STUDY_KEYWORDS)
             if has_study_kw:
-                return "browser_study", "Tra cứu & Tài liệu học Online", "online_study"
-            # General web browsing
-            clean_name = raw_title[:30] if raw_title else "Trình duyệt Web"
-            return "browser_general", clean_name, "deep_work"
+                return "browser_study", "Tài liệu học Online", "online_study", clean_title
+            short_name = clean_title[:28] if clean_title else "Trình duyệt Web"
+            return "browser_general", short_name, "deep_work", clean_title
 
-        # 4. Local Desktop Apps (Default to Deep Work)
+        # 4. Local Desktop Apps
         app_name = proc_name.replace(".exe", "").capitalize()
         if "code" in proc_name or "devenv" in proc_name:
             app_name = "VS Code / IDE"
@@ -269,11 +454,26 @@ class DistractionMonitor:
         elif "powerpnt" in proc_name:
             app_name = "PowerPoint"
         elif "acrobat" in proc_name or "foxit" in proc_name or "sumatra" in proc_name:
-            app_name = "Đọc Sách / Tài liệu PDF"
+            app_name = "Đọc tài liệu PDF"
         elif "notepad" in proc_name:
-            app_name = "Notepad / Ghi chú"
+            app_name = "Notepad"
 
-        return proc_name, app_name, "deep_work"
+        return proc_name, app_name, "deep_work", clean_title
+
+    @staticmethod
+    def _record_tick(store, app_key, display_name, category, raw_title):
+        if app_key not in store:
+            store[app_key] = {
+                "key": app_key,
+                "name": display_name,
+                "category": category,
+                "seconds": 0,
+                "last_title": raw_title[:80],
+                "manual": None
+            }
+        store[app_key]["seconds"] += 1
+        store[app_key]["name"] = display_name
+        store[app_key]["last_title"] = raw_title[:80]
 
     def _process_active_window(self):
         try:
@@ -281,56 +481,63 @@ class DistractionMonitor:
             if not hwnd or not proc_name:
                 return
 
-            app_key, display_name, category = self._classify_window(raw_title, proc_name)
+            app_key, display_name, category, clean_title = self._classify_window(raw_title, proc_name)
+            is_yt_home = ("youtube" in raw_title.lower()) and self._is_youtube_homepage(raw_title)
 
             with self._data_lock:
                 self.total_tracked_seconds += 1
-                # Check if user has manual override
+                self.session_total_seconds += 1
+
+                # Respect explicit manual override only for non-dual-use apps, OR per-key override
                 if app_key in self.usage_records and self.usage_records[app_key].get("manual"):
                     category = self.usage_records[app_key]["manual"]
 
-                # Update records
-                if app_key not in self.usage_records:
-                    self.usage_records[app_key] = {
-                        "key": app_key,
-                        "name": display_name,
-                        "category": category,
-                        "seconds": 0,
-                        "last_title": raw_title[:80],
-                        "manual": None
-                    }
-                self.usage_records[app_key]["seconds"] += 1
-                self.usage_records[app_key]["last_title"] = raw_title[:80]
+                self._record_tick(self.usage_records, app_key, display_name, category, clean_title or raw_title)
+                self._record_tick(self.session_records, app_key, display_name, category, clean_title or raw_title)
 
                 now = time.time()
-                # Clean up expired snoozes
                 expired_hwnds = [h for h, exp in list(self.snoozed_hwnds.items()) if now >= exp]
                 for h in expired_hwnds:
                     del self.snoozed_hwnds[h]
 
+                if is_yt_home:
+                    if self._yt_homepage_since == 0.0:
+                        self._yt_homepage_since = now
+                else:
+                    self._yt_homepage_since = 0.0
+
                 is_snoozed = (hwnd in self.snoozed_hwnds)
-                # Handle Distraction / Barrier
                 is_distracted = (category == "entertainment")
                 trigger_barrier = False
-                title_snippet = raw_title[:50] if raw_title else display_name
+                title_snippet = clean_title[:55] if clean_title else (raw_title[:50] or display_name)
+
                 if is_distracted and (hwnd not in self.allowed_hwnds) and not is_snoozed:
-                    self.current_distracted_hwnd = hwnd
-                    self.last_distracted_key = app_key
-                    if not self.in_distraction:
-                        self.in_distraction = True
-                        now_str = time.strftime("%H:%M:%S")
-                        self.distraction_events.append({
-                            "app": display_name,
-                            "title": title_snippet,
-                            "time": now_str,
-                            "duration": 1
-                        })
-                        if self.barrier_enabled and (now - self.last_distraction_time > 8):
-                            self.last_distraction_time = now
-                            trigger_barrier = True
+                    # 12s homepage search grace period so user can type and open a lecture video
+                    if is_yt_home and (now - self._yt_homepage_since < 12.0):
+                        self.in_distraction = False
                     else:
-                        if self.distraction_events:
-                            self.distraction_events[-1]["duration"] += 1
+                        self.current_distracted_hwnd = hwnd
+                        self.last_distracted_key = app_key
+                        self.last_distracted_title = clean_title or raw_title
+                        if not self.in_distraction:
+                            self.in_distraction = True
+                            now_str = time.strftime("%H:%M:%S")
+                            event = {
+                                "app": display_name,
+                                "title": title_snippet,
+                                "time": now_str,
+                                "duration": 1
+                            }
+                            self.distraction_events.append(dict(event))
+                            self.session_events.append(dict(event))
+                            if self.barrier_enabled and (now - self.last_distraction_time > 8):
+                                self.last_distraction_time = now
+                                trigger_barrier = True
+                        else:
+                            if self.distraction_events:
+                                self.distraction_events[-1]["duration"] += 1
+                            if self.session_events:
+                                self.session_events[-1]["duration"] += 1
                 else:
                     self.in_distraction = False
 
@@ -340,17 +547,17 @@ class DistractionMonitor:
         except Exception:
             pass
 
-    def get_purity_stats(self, total_focus_minutes=50):
-        """
-        Calculates exact seconds for Deep Work, Online Study, and Entertainment.
-        Returns complete, structured honest tracking report for Tab 3 and Modals.
-        """
-        target_seconds = max(1, int(total_focus_minutes * 60))
-        with self._data_lock:
-            records_snapshot = [(k, dict(v)) for k, v in self.usage_records.items()]
-            tracked_snapshot = self.total_tracked_seconds
-            events_snapshot = [dict(e) for e in self.distraction_events]
+    @staticmethod
+    def _fmt_time(sec):
+        mins = sec // 60
+        rem_s = sec % 60
+        if mins > 0 and rem_s > 0:
+            return f"{mins} phút {rem_s} giây"
+        elif mins > 0:
+            return f"{mins} phút"
+        return f"{rem_s} giây"
 
+    def _build_purity_report(self, records_snapshot, tracked_snapshot, events_snapshot, fallback_logged_sec=0):
         sum_usage = sum(d.get("seconds", 0) for _, d in records_snapshot)
         actual_tracked = max(1, max(tracked_snapshot, sum_usage))
 
@@ -383,25 +590,10 @@ class DistractionMonitor:
                 "title": data.get("last_title", "")
             })
 
-        # Check today's logged focus time from daily_history if records are empty
-        today_key = time.strftime("%Y-%m-%d")
-        today_logged_sec = 0
-        try:
-            from config_manager import load_config
-            cfg = load_config()
-            today_entry = cfg.get("daily_history", {}).get(today_key, {})
-            today_logged_mins = today_entry.get("minutes", 0)
-            if today_logged_mins > 0:
-                today_logged_sec = today_logged_mins * 60
-        except Exception:
-            pass
-
-        # If zero seconds were captured by foreground hook but sessions were finished today:
-        if (deep_work_sec + online_study_sec) < today_logged_sec:
-            diff = today_logged_sec - (deep_work_sec + online_study_sec)
+        if fallback_logged_sec > 0 and (deep_work_sec + online_study_sec) < fallback_logged_sec:
+            diff = fallback_logged_sec - (deep_work_sec + online_study_sec)
             deep_work_sec += diff
             actual_tracked += diff
-            # Add or update default study entry in breakdown
             found_study = False
             for b in breakdown:
                 if b["category"] == "deep_work":
@@ -416,7 +608,7 @@ class DistractionMonitor:
                 s = deep_work_sec % 60
                 breakdown.insert(0, {
                     "key": "focus_flow_study",
-                    "name": "Focus Flow • Học Tập Sâu",
+                    "name": "Focus Flow • Học Tập",
                     "category": "deep_work",
                     "seconds": deep_work_sec,
                     "time_str": f"{m}p {s}s" if m > 0 else f"{s}s",
@@ -424,41 +616,73 @@ class DistractionMonitor:
                     "title": "Thời gian các ca học đã hoàn thành"
                 })
 
-        # Calculate percentages after final actual_tracked total is settled
         for b in breakdown:
             b["percent"] = min(100, max(0, int((b["seconds"] / max(1, actual_tracked)) * 100)))
 
         productive_sec = deep_work_sec + online_study_sec
         total_recorded = deep_work_sec + online_study_sec + entertainment_sec
-        # Purity percent based on actual tracked activity
-        if total_recorded > 0:
-            purity_percent = max(0, min(100, int((productive_sec / total_recorded) * 100)))
-        else:
-            purity_percent = 100
-
-        def fmt_time(sec):
-            mins = sec // 60
-            rem_s = sec % 60
-            if mins > 0 and rem_s > 0:
-                return f"{mins} phút {rem_s} giây"
-            elif mins > 0:
-                return f"{mins} phút"
-            return f"{rem_s} giây"
+        purity_percent = max(0, min(100, int((productive_sec / total_recorded) * 100))) if total_recorded > 0 else 100
 
         return {
             "purity_percent": purity_percent,
             "deep_work_seconds": deep_work_sec,
-            "deep_work_str": fmt_time(deep_work_sec),
+            "deep_work_str": self._fmt_time(deep_work_sec),
             "online_study_seconds": online_study_sec,
-            "online_study_str": fmt_time(online_study_sec),
+            "online_study_str": self._fmt_time(online_study_sec),
             "distracted_seconds": entertainment_sec,
-            "distracted_str": fmt_time(entertainment_sec),
-            "productive_str": fmt_time(productive_sec),
-            "pure_str": fmt_time(productive_sec),
+            "distracted_str": self._fmt_time(entertainment_sec),
+            "productive_str": self._fmt_time(productive_sec),
+            "pure_str": self._fmt_time(productive_sec),
             "total_tracked_seconds": actual_tracked,
-            "total_tracked_str": fmt_time(actual_tracked),
+            "total_tracked_str": self._fmt_time(actual_tracked),
             "incident_count": len(events_snapshot),
             "allow_youtube_fb_study": self.allow_youtube_fb_study,
             "breakdown": breakdown,
             "events": events_snapshot
+        }
+
+    def get_session_purity_stats(self, total_focus_minutes=50):
+        """Returns purity report for ONLY the active/current session."""
+        with self._data_lock:
+            records_snapshot = [(k, dict(v)) for k, v in self.session_records.items()]
+            tracked_snapshot = self.session_total_seconds
+            events_snapshot = [dict(e) for e in self.session_events]
+        return self._build_purity_report(records_snapshot, tracked_snapshot, events_snapshot, fallback_logged_sec=0)
+
+    def get_purity_stats(self, total_focus_minutes=50):
+        """Returns accumulated daily purity report."""
+        with self._data_lock:
+            records_snapshot = [(k, dict(v)) for k, v in self.usage_records.items()]
+            tracked_snapshot = self.total_tracked_seconds
+            events_snapshot = [dict(e) for e in self.distraction_events]
+
+        today_key = time.strftime("%Y-%m-%d")
+        today_logged_sec = 0
+        try:
+            from config_manager import load_config
+            cfg = load_config()
+            today_entry = cfg.get("daily_history", {}).get(today_key, {})
+            today_logged_mins = today_entry.get("minutes", 0)
+            if today_logged_mins > 0:
+                today_logged_sec = today_logged_mins * 60
+        except Exception:
+            pass
+
+        return self._build_purity_report(records_snapshot, tracked_snapshot, events_snapshot, fallback_logged_sec=today_logged_sec)
+
+    def get_analytics_bundle(self, session_num=1, is_focus_active=False, total_focus_minutes=50):
+        """Returns current session report, archived sessions list, and daily summary for Tab 3."""
+        current_report = self.get_session_purity_stats(total_focus_minutes)
+        current_report["session"] = int(session_num)
+        current_report["start_time"] = self.session_start_time
+        current_report["is_active"] = bool(is_focus_active)
+
+        daily_report = self.get_purity_stats(total_focus_minutes)
+        with self._data_lock:
+            sessions_copy = [dict(s) for s in self.completed_sessions_today]
+
+        return {
+            "current_session": current_report,
+            "sessions": sessions_copy,
+            "daily": daily_report
         }

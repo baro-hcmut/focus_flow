@@ -1005,6 +1005,8 @@
       border: 1px solid;
       transition: all 0.15s ease;
       user-select: none;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .tag-btn-reclassify.study {
@@ -1023,6 +1025,142 @@
       background: rgba(6, 182, 212, 0.12);
       border-color: rgba(6, 182, 212, 0.3);
       color: #38bdf8;
+    }
+
+    .analytics-scope-bar {
+      display: flex;
+      gap: 3px;
+      padding: 3px;
+      background: rgba(15, 23, 42, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 7px;
+      margin-bottom: 8px;
+    }
+
+    .analytics-scope-btn {
+      flex: 1;
+      height: 26px;
+      border: none;
+      border-radius: 5px;
+      background: transparent;
+      color: #94a3b8;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .analytics-scope-btn:hover {
+      color: #e2e8f0;
+    }
+
+    .analytics-scope-btn.active {
+      background: rgba(255, 255, 255, 0.1);
+      color: #f8fafc;
+    }
+
+    .session-chips-row {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      margin-bottom: 6px;
+      scrollbar-width: thin;
+    }
+
+    .session-chip {
+      flex-shrink: 0;
+      padding: 5px 9px;
+      border-radius: 6px;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+      font-size: 10.5px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+    }
+
+    .session-chip:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      color: #e2e8f0;
+    }
+
+    .session-chip.active {
+      background: rgba(2, 132, 199, 0.18);
+      border-color: rgba(56, 189, 248, 0.45);
+      color: #f8fafc;
+    }
+
+    .session-meta-strip {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-size: 10.5px;
+      color: #94a3b8;
+      padding: 4px 8px;
+      margin-bottom: 6px;
+      background: rgba(15, 23, 42, 0.45);
+      border-radius: 5px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .breakdown-filter-pills {
+      display: flex;
+      gap: 4px;
+    }
+
+    .breakdown-filter-pill {
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(15, 23, 42, 0.55);
+      color: #94a3b8;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .breakdown-filter-pill.active {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.22);
+      color: #f8fafc;
+    }
+
+    .breakdown-group-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      color: #94a3b8;
+      margin: 6px 0 3px 2px;
+    }
+
+    .btn-breakdown-toggle {
+      width: 100%;
+      padding: 5px 8px;
+      margin-top: 2px;
+      border-radius: 5px;
+      border: 1px dashed rgba(255, 255, 255, 0.12);
+      background: rgba(15, 23, 42, 0.4);
+      color: #94a3b8;
+      font-size: 10.5px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .btn-breakdown-toggle:hover {
+      color: #e2e8f0;
+      border-color: rgba(255, 255, 255, 0.25);
     }
 
     /* 1. TITLEBAR */
@@ -2443,22 +2581,28 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 8px;
       font-size: 11.5px;
     }
 
     .app-name {
+      flex: 1;
+      min-width: 0;
       font-weight: 600;
       color: var(--text);
       display: flex;
       align-items: center;
       gap: 6px;
+      overflow: hidden;
     }
 
     .app-duration-tag {
       font-family: var(--mono);
-      font-size: 11px;
-      color: var(--rose);
+      font-size: 10.5px;
+      color: #cbd5e1;
       font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
     }
 
     .app-bar-track {
@@ -5416,7 +5560,7 @@ body[data-fx="pixel"] .ambient-pill.active {
       </div>
       <span class="brand-title">Focus Flow</span>
       <div class="status-dot" id="headerStatusDot"></div>
-      <span class="badge-app-edition" id="titlebarVersionBadge">v2.0.2</span>
+      <span class="badge-app-edition" id="titlebarVersionBadge">v2.1.0</span>
       <button class="titlebar-update-btn" id="btnTitlebarUpdate" style="display:none;" onclick="openUpdateModal()" title="Nhấp để xem bản cập nhật mới!">
         <span class="update-dot-ping"></span>
         <span id="titlebarUpdateText">Cập nhật v1.1</span>
@@ -5724,8 +5868,26 @@ body[data-fx="pixel"] .ambient-pill.active {
       </div>
 
       <div class="analytics-dashboard">
-        <!-- 7-Day History Visual Card -->
-        <div class="weekly-history-card">
+        <!-- Scope Switcher: Ca hiện tại / Từng ca / Cả ngày -->
+        <div class="analytics-scope-bar">
+          <button class="analytics-scope-btn active" id="scopeBtnCurrent" onclick="setAnalyticsScope('current')">Ca hiện tại</button>
+          <button class="analytics-scope-btn" id="scopeBtnSessions" onclick="setAnalyticsScope('sessions')">Theo từng ca</button>
+          <button class="analytics-scope-btn" id="scopeBtnDaily" onclick="setAnalyticsScope('daily')">Tổng cả ngày</button>
+        </div>
+
+        <!-- Session Selector Strip (shown in 'sessions' mode) -->
+        <div id="analyticsSessionsBar" style="display:none;">
+          <div class="session-chips-row" id="analyticsSessionChips"></div>
+        </div>
+
+        <!-- Subtle 1-line context strip for active or selected session -->
+        <div class="session-meta-strip" id="analyticsContextStrip">
+          <span id="analyticsContextLeft">Ca hiện tại • Đang sẵn sàng</span>
+          <span id="analyticsContextRight" style="max-width:210px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#cbd5e1;"></span>
+        </div>
+
+        <!-- 7-Day History Visual Card (shown in 'daily' mode) -->
+        <div class="weekly-history-card" id="weeklyHistoryCard" style="display:none;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
             <div style="display:flex; align-items:center; gap:6px;">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -5748,12 +5910,12 @@ body[data-fx="pixel"] .ambient-pill.active {
           <div class="stat-metric-card online">
             <div class="stat-metric-title">Học Trực Tuyến</div>
             <div class="stat-metric-num" id="statOnlineTime">0p 0s</div>
-            <div style="font-size:9.5px; color:var(--text-muted);">YouTube bài giảng, FB Live</div>
+            <div style="font-size:9.5px; color:var(--text-muted);">YouTube bài giảng, FB học</div>
           </div>
           <div class="stat-metric-card distracted">
             <div class="stat-metric-title">Xao Nhãng</div>
             <div class="stat-metric-num" id="statDistractedTime">0p 0s</div>
-            <div style="font-size:9.5px; color:var(--text-muted);">TikTok, Đọc truyện, Game</div>
+            <div style="font-size:9.5px; color:var(--text-muted);">TikTok, YouTube giải trí, Game</div>
           </div>
         </div>
 
@@ -5768,10 +5930,14 @@ body[data-fx="pixel"] .ambient-pill.active {
           <div class="prog-seg-distracted" id="progSegDistracted" style="width: 0%;"></div>
         </div>
 
-        <!-- App & Web List -->
-        <div style="font-size:11.5px; font-weight:700; color:#cbd5e1; margin-top:6px; display:flex; justify-content:space-between; align-items:center;">
-          <span>CHI TIẾT TỪNG TRANG WEB / PHẦN MỀM</span>
-          <span style="font-size:10px; color:var(--text-muted); font-weight:normal;">Bấm vào nhãn để đổi phân loại</span>
+        <!-- App & Web List with Category Filter -->
+        <div style="font-size:11px; font-weight:700; color:#cbd5e1; margin-top:6px; display:flex; justify-content:space-between; align-items:center; gap:6px;">
+          <span>CHI TIẾT WEB / PHẦN MỀM</span>
+          <div class="breakdown-filter-pills">
+            <button class="breakdown-filter-pill active" id="filterPillAll" onclick="setBreakdownFilter('all')">Tất cả</button>
+            <button class="breakdown-filter-pill" id="filterPillStudy" onclick="setBreakdownFilter('study')">Học tập</button>
+            <button class="breakdown-filter-pill" id="filterPillDist" onclick="setBreakdownFilter('distraction')">Xao nhãng</button>
+          </div>
         </div>
         <div class="app-breakdown-list" id="tab3AppBreakdownList">
           <div style="text-align:center; padding:22px; color:#94a3b8; font-size:11.5px;">
@@ -5885,6 +6051,17 @@ body[data-fx="pixel"] .ambient-pill.active {
               <div class="switch-knob"></div>
             </div>
           </div>
+
+          <div class="settings-item-row" style="flex-direction:column; align-items:stretch; gap:8px;">
+            <div>
+              <div class="settings-label-title">Từ Khóa Học Tập Trên YouTube / Web</div>
+              <div class="settings-label-desc">Tự nhận là học bài nếu tiêu đề video chứa các từ này (cách nhau bằng dấu phẩy)</div>
+            </div>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <input type="text" id="customStudyKeywordsInput" placeholder="vd: thầy quang, 28tech, phương trình vi phân, f8" style="flex:1; height:30px; background:rgba(0,0,0,0.28); border:1px solid rgba(255,255,255,0.12); border-radius:6px; padding:0 10px; color:#f8fafc; font-size:11.5px; outline:none;">
+              <button class="btn-hero-ghost" style="height:30px; padding:0 12px; font-size:11px; flex-shrink:0;" onclick="saveCustomStudyKeywords()">Lưu</button>
+            </div>
+          </div>
         </div>
 
         <!-- Âm Lượng & Chuông Báo -->
@@ -5914,7 +6091,7 @@ body[data-fx="pixel"] .ambient-pill.active {
             <div>
               <div class="settings-label-title" style="display:flex; align-items:center; gap:8px;">
                 <span>Focus Flow • Pomodoro 50/10 Pro</span>
-                <span class="badge-app-edition" id="settingsVersionLabel">v2.0.2</span>
+                <span class="badge-app-edition" id="settingsVersionLabel">v2.1.0</span>
                 <span class="badge-update-alert" id="settingsUpdateAlertBadge" style="display:none; cursor:pointer;" onclick="openUpdateModal()">✨ Có bản mới</span>
               </div>
               <div class="settings-label-desc" id="settingsUpdateStatusText">Tự động kiểm tra bản cập nhật mới từ GitHub Releases</div>
@@ -6225,7 +6402,7 @@ body[data-fx="pixel"] .ambient-pill.active {
         <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255, 255, 255, 0.03); border:1px solid rgba(255, 255, 255, 0.06); padding:8px 12px; border-radius:8px; font-size:12px;">
           <div style="display:flex; align-items:center; gap:6px;">
             <span style="color:#94a3b8;">Phiên bản mới:</span>
-            <span id="updateModalNewVer" style="font-weight:600; color:#38bdf8;">v2.0.2</span>
+            <span id="updateModalNewVer" style="font-weight:600; color:#38bdf8;">v2.1.0</span>
           </div>
           <div style="display:flex; align-items:center; gap:6px; font-size:11.5px; color:#64748b;">
             <span>Đang dùng:</span>
@@ -6435,15 +6612,16 @@ body[data-fx="pixel"] .ambient-pill.active {
   <!-- FRICTION BARRIER MODAL (When Distraction Detected) -->
   <div class="friction-modal" id="frictionModal">
     <div style="display:flex; justify-content:center; margin-bottom:8px; color:#f59e0b;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
-    <div style="font-size:16px; font-weight:700; color:#fff; margin-bottom:4px;">DỪNG LẠI MỘT CHÚT!</div>
-    <div style="font-size:11.5px; color:#38bdf8; font-weight:600; margin-bottom:10px; max-width:380px; word-break:break-word; background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.25); border-radius:6px; padding:5px 12px;" id="frictionDetectedTitle">Phát hiện: Trang web / Ứng dụng giải trí</div>
+    <div style="font-size:15.5px; font-weight:700; color:#fff; margin-bottom:4px;">Dừng lại một chút</div>
+    <div style="font-size:11.5px; color:#38bdf8; font-weight:600; margin-bottom:10px; max-width:380px; word-break:break-word; background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.22); border-radius:6px; padding:5px 12px;" id="frictionDetectedTitle">Phát hiện: Trang web / Ứng dụng giải trí</div>
     <div style="font-size:12px; color:#94a3b8; max-width:380px; margin-bottom:16px; line-height:1.5;">
-      Cửa sổ này nằm trong danh sách giải trí / mạng xã hội. Nếu bạn đang học bài trực tuyến (video bài giảng, livestream, tài liệu), hãy chọn xác nhận học bài bên dưới.
+      Cửa sổ này đang được xếp vào nhóm giải trí. Nếu bạn đang xem video bài giảng hoặc tra cứu tài liệu, hãy chọn xác nhận bên dưới.
     </div>
     <div style="display:flex; flex-direction:column; gap:8px; width:100%; max-width:320px;">
-      <button class="btn-hero-primary" style="padding:0 20px; height:36px; background:linear-gradient(135deg, #0ea5e9, #2563eb);" onclick="pyCall('friction_allow_as_study')">Tôi đang học bài / Xem bài giảng</button>
-      <button class="btn-hero-ghost" style="padding:0 20px; height:36px; border-color:rgba(16,185,129,0.4); color:#10b981;" onclick="pyCall('friction_back_to_study')">Quay lại bàn học ngay</button>
-      <button class="btn-hero-ghost" style="padding:0 16px; height:34px; font-size:11.5px; color:#94a3b8;" id="btnFrictionAllow" onclick="pyCall('friction_allow_distraction')">Chỉ mở giải trí chốc lát (2 phút)</button>
+      <button class="btn-hero-primary" style="padding:0 18px; height:36px; background:#0284c7;" onclick="pyCall('friction_allow_as_study', 'video')">Chỉ video / trang này là học bài</button>
+      <button class="btn-hero-ghost" id="btnFrictionAllowSession" style="padding:0 18px; height:34px; display:none; font-size:11.5px; border-color:rgba(56,189,248,0.35); color:#7dd3fc;" onclick="pyCall('friction_allow_as_study', 'session')">Cho phép cả ca này học trên YouTube</button>
+      <button class="btn-hero-ghost" style="padding:0 18px; height:36px; border-color:rgba(16,185,129,0.4); color:#10b981;" onclick="pyCall('friction_back_to_study')">Quay lại bàn học ngay</button>
+      <button class="btn-hero-ghost" style="padding:0 16px; height:34px; font-size:11.5px; color:#94a3b8;" id="btnFrictionAllow" onclick="pyCall('friction_allow_distraction')">Mở giải trí tạm (2 phút)</button>
     </div>
   </div>
 
@@ -7227,92 +7405,257 @@ function copyPuritySummary() {
     };
 
     // =========================================================================
-    // THỐNG KÊ & CHI TIẾT WEB/APP (Tab 3 Analytics)
+    // THỐNG KÊ & CHI TIẾT WEB/APP (Tab 3 Analytics: Ca hiện tại / Theo ca / Cả ngày)
     // =========================================================================
+    let analyticsBundle = null;
+    let analyticsScope = "current"; // "current" | "sessions" | "daily"
+    let selectedSessionNum = null;
+    let breakdownFilter = "all"; // "all" | "study" | "distraction"
+    let expandedGroups = { distraction: false, study: false, filtered: false };
+
+    function setAnalyticsScope(scope) {
+      analyticsScope = scope;
+      ["current", "sessions", "daily"].forEach(s => {
+        const btn = document.getElementById(`scopeBtn${s.charAt(0).toUpperCase() + s.slice(1)}`);
+        if (btn) btn.classList.toggle("active", s === scope);
+      });
+      expandedGroups = { distraction: false, study: false, filtered: false };
+      renderAnalyticsView();
+    }
+
+    function selectAnalyticsSession(sessNum) {
+      selectedSessionNum = sessNum;
+      expandedGroups = { distraction: false, study: false, filtered: false };
+      renderAnalyticsView();
+    }
+
+    function setBreakdownFilter(filter) {
+      breakdownFilter = filter;
+      const map = { all: "filterPillAll", study: "filterPillStudy", distraction: "filterPillDist" };
+      Object.entries(map).forEach(([k, id]) => {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle("active", k === filter);
+      });
+      renderAnalyticsView();
+    }
+
+    function toggleGroupExpand(groupKey) {
+      expandedGroups[groupKey] = !expandedGroups[groupKey];
+      renderAnalyticsView();
+    }
+
     function loadAnalyticsTab() {
-      pyCall("get_purity_report").then(data => {
-        renderAnalyticsContent(data);
+      pyCall("get_analytics_bundle").then(bundle => {
+        if (bundle) {
+          analyticsBundle = bundle;
+          renderAnalyticsView();
+        }
       });
       pyCall("get_daily_history").then(hist => {
         if (hist) renderWeeklyHistory(hist);
       });
     }
 
+    function formatShortSec(sec) {
+      const m = Math.floor((sec || 0) / 60);
+      const s = (sec || 0) % 60;
+      return m > 0 ? `${m} phút ${s > 0 ? s + ' giây' : ''}`.trim() : `${s} giây`;
+    }
+
+    function renderAnalyticsView() {
+      if (!analyticsBundle) return;
+      const sessions = analyticsBundle.sessions || [];
+      const curSess = analyticsBundle.current_session || {};
+      const daily = analyticsBundle.daily || {};
+
+      // Update "Theo từng ca" button count
+      const sessBtn = document.getElementById("scopeBtnSessions");
+      if (sessBtn) {
+        sessBtn.innerText = sessions.length > 0 ? `Theo từng ca (${sessions.length})` : "Theo từng ca";
+      }
+
+      const sessionsBar = document.getElementById("analyticsSessionsBar");
+      const weeklyCard = document.getElementById("weeklyHistoryCard");
+      const ctxStrip = document.getElementById("analyticsContextStrip");
+      const ctxLeft = document.getElementById("analyticsContextLeft");
+      const ctxRight = document.getElementById("analyticsContextRight");
+
+      if (sessionsBar) sessionsBar.style.display = (analyticsScope === "sessions") ? "block" : "none";
+      if (weeklyCard) weeklyCard.style.display = (analyticsScope === "daily") ? "block" : "none";
+
+      let activeData = curSess;
+      if (analyticsScope === "current") {
+        if (ctxStrip) ctxStrip.style.display = "flex";
+        const stText = curSess.is_active ? "Đang tập trung" : "Chưa chạy / Tạm dừng";
+        if (ctxLeft) ctxLeft.innerText = `Ca ${curSess.session || currentSession} • Bắt đầu ${curSess.start_time || "--:--"} • ${stText}`;
+        if (ctxRight) ctxRight.innerText = curSess.total_tracked_seconds ? `Đã ghi ${curSess.total_tracked_str}` : "";
+      } else if (analyticsScope === "sessions") {
+        // Render chips for completed sessions (+ current if active)
+        const chipsEl = document.getElementById("analyticsSessionChips");
+        const allSessChoices = [...sessions];
+        if (curSess.total_tracked_seconds > 0 || curSess.is_active) {
+          allSessChoices.push({ ...curSess, is_live: true });
+        }
+        if (selectedSessionNum === null || !allSessChoices.some(s => s.session === selectedSessionNum)) {
+          selectedSessionNum = allSessChoices.length > 0 ? allSessChoices[allSessChoices.length - 1].session : null;
+        }
+        if (chipsEl) {
+          chipsEl.innerHTML = "";
+          if (allSessChoices.length === 0) {
+            chipsEl.innerHTML = `<span style="font-size:11px; color:#64748b; padding:3px 2px;">Chưa có ca nào hoàn thành hôm nay.</span>`;
+          } else {
+            allSessChoices.forEach(s => {
+              const chip = document.createElement("button");
+              chip.className = `session-chip ${s.session === selectedSessionNum ? 'active' : ''}`;
+              if (s.is_live) {
+                chip.innerText = `Ca ${s.session} (Đang học • ${s.purity_percent}%)`;
+              } else {
+                chip.innerText = `Ca ${s.session} · ${s.minutes}p · ${s.purity_percent}%`;
+              }
+              chip.onclick = () => selectAnalyticsSession(s.session);
+              chipsEl.appendChild(chip);
+            });
+          }
+        }
+        const chosen = allSessChoices.find(s => s.session === selectedSessionNum);
+        activeData = chosen || { deep_work_seconds: 0, online_study_seconds: 0, distracted_seconds: 0, purity_percent: 100, breakdown: [] };
+        if (ctxStrip) ctxStrip.style.display = chosen ? "flex" : "none";
+        if (chosen) {
+          const timeRange = chosen.is_live ? `Từ ${chosen.start_time} (Đang chạy)` : `${chosen.start_time || "--:--"} – ${chosen.end_time || "--:--"} (${chosen.minutes} phút)`;
+          if (ctxLeft) ctxLeft.innerText = `Ca ${chosen.session} • ${timeRange}`;
+          if (ctxRight) {
+            ctxRight.innerText = chosen.goal ? `Mục tiêu: ${chosen.goal}` : "";
+            ctxRight.title = chosen.goal || "";
+          }
+        }
+      } else {
+        activeData = daily;
+        if (ctxStrip) ctxStrip.style.display = "flex";
+        if (ctxLeft) ctxLeft.innerText = `Tổng hợp hôm nay • ${sessions.length} ca đã hoàn thành`;
+        if (ctxRight) ctxRight.innerText = daily.total_tracked_seconds ? `Tổng theo dõi: ${daily.total_tracked_str}` : "";
+      }
+
+      renderAnalyticsContent(activeData);
+    }
+
+    function createBreakdownRow(item) {
+      const row = document.createElement("div");
+      row.className = "app-breakdown-row";
+
+      const isDist = (item.category === "entertainment");
+      const tagClass = item.category === "deep_work" ? "study" : (item.category === "online_study" ? "online_study" : "distraction");
+      const tagLabel = item.category === "deep_work" ? "Học sâu" : (item.category === "online_study" ? "Học online" : "Xao nhãng");
+      const dotColor = isDist ? "var(--rose)" : (item.category === "online_study" ? "var(--cyan)" : "var(--emerald)");
+
+      const safeName = escapeUpdateHtml(item.name);
+      const safeTitle = item.title ? escapeUpdateHtml(item.title) : '';
+
+      row.innerHTML = `
+        <div class="app-info-line">
+          <span class="app-name">
+            <span style="width:6px; height:6px; border-radius:50%; background:${dotColor}; flex-shrink:0;"></span>
+            <strong style="white-space:nowrap; flex-shrink:0;">${safeName}</strong>
+            ${safeTitle ? `<span style="font-size:10.5px; color:var(--text-dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${safeTitle}">- ${safeTitle}</span>` : ''}
+          </span>
+          <div style="display:flex; align-items:center; gap:7px; flex-shrink:0;">
+            <span class="app-duration-tag">${item.time_str} · ${item.percent}%</span>
+            <span class="tag-btn-reclassify ${tagClass}" title="Đổi phân loại: Học bài / Xao nhãng">${tagLabel} ⇄</span>
+          </div>
+        </div>
+        <div class="app-bar-track">
+          <div class="app-bar-fill" style="width: ${item.percent}%; background: ${dotColor};"></div>
+        </div>
+      `;
+      const reclassifyBtn = row.querySelector(".tag-btn-reclassify");
+      if (reclassifyBtn) {
+        reclassifyBtn.onclick = () => toggleAppCategory(item.key, item.category);
+      }
+      return row;
+    }
+
     function renderAnalyticsContent(data) {
       if (!data) return;
       cachedPurityData = data;
 
-      document.getElementById("statDeepTime").innerText = data.deep_work_str || "0s";
-      document.getElementById("statOnlineTime").innerText = data.online_study_str || "0s";
-      document.getElementById("statDistractedTime").innerText = data.distracted_str || "0s";
+      document.getElementById("statDeepTime").innerText = data.deep_work_str || "0 giây";
+      document.getElementById("statOnlineTime").innerText = data.online_study_str || "0 giây";
+      document.getElementById("statDistractedTime").innerText = data.distracted_str || "0 giây";
 
       const score = data.purity_percent !== undefined ? data.purity_percent : 100;
       document.getElementById("statPurityBadge").innerText = `${score}% Tập trung`;
 
       const total = Math.max(1, (data.deep_work_seconds || 0) + (data.online_study_seconds || 0) + (data.distracted_seconds || 0));
-      const deepPct = ((data.deep_work_seconds || 0) / total) * 100;
-      const onlinePct = ((data.online_study_seconds || 0) / total) * 100;
-      const distPct = ((data.distracted_seconds || 0) / total) * 100;
+      document.getElementById("progSegDeep").style.width = `${((data.deep_work_seconds || 0) / total) * 100}%`;
+      document.getElementById("progSegOnline").style.width = `${((data.online_study_seconds || 0) / total) * 100}%`;
+      document.getElementById("progSegDistracted").style.width = `${((data.distracted_seconds || 0) / total) * 100}%`;
 
-      document.getElementById("progSegDeep").style.width = `${deepPct}%`;
-      document.getElementById("progSegOnline").style.width = `${onlinePct}%`;
-      document.getElementById("progSegDistracted").style.width = `${distPct}%`;
+      const items = data.breakdown || [];
+      const studyItems = items.filter(i => i.category === "deep_work" || i.category === "online_study");
+      const distItems = items.filter(i => i.category === "entertainment");
 
-      // Render App list
+      // Update filter counts
+      const fAll = document.getElementById("filterPillAll");
+      const fStudy = document.getElementById("filterPillStudy");
+      const fDist = document.getElementById("filterPillDist");
+      if (fAll) fAll.innerText = `Tất cả (${items.length})`;
+      if (fStudy) fStudy.innerText = `Học tập (${studyItems.length})`;
+      if (fDist) fDist.innerText = `Xao nhãng (${distItems.length})`;
+
       const listEl = document.getElementById("tab3AppBreakdownList");
       if (!listEl) return;
       listEl.innerHTML = "";
 
-      if (data.breakdown && data.breakdown.length > 0) {
-        data.breakdown.forEach(item => {
-          const row = document.createElement("div");
-          row.className = "app-breakdown-row";
-
-          const isStudy = (item.category === "deep_work" || item.category === "online_study");
-          const tagClass = item.category === "deep_work" ? "study" : (item.category === "online_study" ? "online_study" : "distraction");
-          const tagLabel = item.category === "deep_work" ? "Học sâu" : (item.category === "online_study" ? "Học trực tuyến" : "Xao nhãng");
-
-          const safeName = escapeUpdateHtml(item.name);
-          const safeTitle = item.title ? escapeUpdateHtml(item.title) : '';
-
-          row.innerHTML = `
-            <div class="app-info-line">
-              <span class="app-name">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg>
-                <strong>${safeName}</strong>
-                ${safeTitle ? `<span style="font-size:10px; color:var(--text-dim); max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">- ${safeTitle}</span>` : ''}
-              </span>
-              <div style="display:flex; align-items:center; gap:8px;">
-                <span class="app-duration-tag">${item.time_str} (${item.percent}%)</span>
-                <span class="tag-btn-reclassify ${tagClass}" title="Bấm để đổi: Học bài <-> Xao nhãng">
-                  ${tagLabel} ⇄
-                </span>
-              </div>
-            </div>
-            <div class="app-bar-track">
-              <div class="app-bar-fill" style="width: ${item.percent}%; background: ${item.category === 'entertainment' ? 'var(--rose)' : (item.category === 'online_study' ? 'var(--cyan)' : 'var(--emerald)')};"></div>
-            </div>
-          `;
-          const reclassifyBtn = row.querySelector(".tag-btn-reclassify");
-          if (reclassifyBtn) {
-            reclassifyBtn.onclick = () => toggleAppCategory(item.key, item.category);
-          }
-          listEl.appendChild(row);
-        });
-      } else {
+      if (items.length === 0) {
         listEl.innerHTML = `
           <div style="text-align:center; padding:18px; color:var(--text-dim); font-size:11px;">
-            Đang ghi nhận thời gian... Hãy bắt đầu học hoặc sử dụng các ứng dụng để theo dõi!
+            Chưa có dữ liệu ứng dụng ở chế độ xem này.
           </div>
         `;
+        return;
+      }
+
+      const appendGroup = (title, groupItems, groupKey, defaultLimit, totalSeconds) => {
+        if (groupItems.length === 0) return;
+        const hdr = document.createElement("div");
+        hdr.className = "breakdown-group-header";
+        hdr.innerHTML = `<span>${title}</span><span style="color:#cbd5e1; font-weight:600;">${formatShortSec(totalSeconds)}</span>`;
+        listEl.appendChild(hdr);
+
+        const isExpanded = !!expandedGroups[groupKey];
+        const visible = isExpanded ? groupItems : groupItems.slice(0, defaultLimit);
+        visible.forEach(item => listEl.appendChild(createBreakdownRow(item)));
+
+        const hiddenCount = groupItems.length - defaultLimit;
+        if (hiddenCount > 0) {
+          const btn = document.createElement("button");
+          btn.className = "btn-breakdown-toggle";
+          btn.innerText = isExpanded ? "Thu gọn bớt" : `Xem thêm ${hiddenCount} mục khác`;
+          btn.onclick = () => toggleGroupExpand(groupKey);
+          listEl.appendChild(btn);
+        }
+      };
+
+      if (breakdownFilter === "all") {
+        const distTotal = distItems.reduce((acc, x) => acc + (x.seconds || 0), 0);
+        const studyTotal = studyItems.reduce((acc, x) => acc + (x.seconds || 0), 0);
+        appendGroup("Xao nhãng", distItems, "distraction", 2, distTotal);
+        appendGroup("Học tập & Làm việc", studyItems, "study", 3, studyTotal);
+      } else if (breakdownFilter === "study") {
+        const studyTotal = studyItems.reduce((acc, x) => acc + (x.seconds || 0), 0);
+        appendGroup("Học tập & Làm việc", studyItems, "filtered", 5, studyTotal);
+      } else {
+        const distTotal = distItems.reduce((acc, x) => acc + (x.seconds || 0), 0);
+        appendGroup("Xao nhãng", distItems, "filtered", 5, distTotal);
       }
     }
 
     function toggleAppCategory(key, currentCat) {
       const newCat = (currentCat === "entertainment") ? "online_study" : "entertainment";
-      pyCall("reclassify_usage_item", key, newCat).then(() => {
+      const scopeArg = (analyticsScope === "sessions") ? "session" : "daily";
+      const sessArg = (analyticsScope === "sessions") ? selectedSessionNum : null;
+      pyCall("reclassify_usage_item", key, newCat, scopeArg, sessArg).then(() => {
         loadAnalyticsTab();
-        showToast(`✓ Đã đổi phân loại cho ${key}`);
+        showToast("Đã cập nhật phân loại");
       });
     }
 
@@ -7827,7 +8170,7 @@ function copyPuritySummary() {
     // =========================================================================
     // FRICTION BARRIER MODAL
     // =========================================================================
-    window.showFrictionBarrier = function(distractedTitle) {
+    window.showFrictionBarrier = function(distractedTitle, isFlexible) {
       if (document.body.classList.contains("mini-mode")) {
         document.body.classList.remove("mini-mode");
         pyCall("restore_full_window");
@@ -7838,9 +8181,13 @@ function copyPuritySummary() {
       if (titleSpan) {
         titleSpan.innerText = distractedTitle ? `Phát hiện: ${distractedTitle}` : "Phát hiện: Trang web / Ứng dụng giải trí";
       }
+      const sessBtn = document.getElementById("btnFrictionAllowSession");
+      if (sessBtn) {
+        sessBtn.style.display = isFlexible ? "block" : "none";
+      }
       frictionCountSec = 3;
       const btn = document.getElementById("btnFrictionAllow");
-      btn.innerText = `Chỉ mở giải trí chốc lát (${frictionCountSec}s)`;
+      btn.innerText = `Mở giải trí tạm (${frictionCountSec}s)`;
       btn.disabled = true;
       btn.style.opacity = "0.5";
       clearInterval(frictionTimer);
@@ -7848,11 +8195,11 @@ function copyPuritySummary() {
         frictionCountSec--;
         if (frictionCountSec <= 0) {
           clearInterval(frictionTimer);
-          btn.innerText = "Chỉ mở giải trí chốc lát (2 phút)";
+          btn.innerText = "Mở giải trí tạm (2 phút)";
           btn.disabled = false;
           btn.style.opacity = "1";
         } else {
-          btn.innerText = `Chỉ mở giải trí chốc lát (${frictionCountSec}s)`;
+          btn.innerText = `Mở giải trí tạm (${frictionCountSec}s)`;
         }
       }, 1000);
     };
@@ -7906,6 +8253,17 @@ function copyPuritySummary() {
       else toggle.classList.remove("on");
       pyCall("toggle_feature_config", key, newState);
       // toast removed
+    }
+
+    function saveCustomStudyKeywords() {
+      const inp = document.getElementById("customStudyKeywordsInput");
+      if (!inp) return;
+      pyCall("set_custom_study_keywords", inp.value).then(savedList => {
+        if (Array.isArray(savedList)) {
+          inp.value = savedList.join(", ");
+        }
+        showToast("Đã lưu danh sách từ khóa học tập");
+      });
     }
 
     // =========================================================================
@@ -8051,6 +8409,11 @@ function copyPuritySummary() {
             }
           }
         });
+
+        const kwInp = document.getElementById("customStudyKeywordsInput");
+        if (kwInp && Array.isArray(config.custom_study_keywords)) {
+          kwInp.value = config.custom_study_keywords.join(", ");
+        }
       }
     };
 

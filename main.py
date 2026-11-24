@@ -58,7 +58,7 @@ STATE_FOCUS = "FOCUS"
 STATE_BREAK = "BREAK"
 STATE_PAUSED = "PAUSED"
 
-APP_VERSION = "2.0.2"
+APP_VERSION = "2.1.0"
 GITHUB_REPO = "baro-hcmut/focus_flow"
 
 def parse_version_tuple(v_str):
@@ -504,7 +504,9 @@ class PomodoroApp:
         self.current_distracted_hwnd = hwnd
         if self.is_mini_mode:
             self.restore_full_window()
-        self.eval_js(f"window.showFrictionBarrier({json.dumps(title)});")
+        last_key = getattr(self.distraction_monitor, "last_distracted_key", "") or ""
+        is_flexible = any(p in last_key for p in ("youtube", "facebook", "reddit", "x_"))
+        self.eval_js(f"window.showFrictionBarrier({json.dumps(title)}, {json.dumps(is_flexible)});")
         self.sync_parking_to_js()
 
         def _bring_to_front(native_form):
@@ -561,6 +563,7 @@ class PomodoroApp:
             self.remaining_seconds = self.focus_duration
             self.total_target_seconds = self.focus_duration
             self.distraction_monitor.stop_monitoring()
+            self.distraction_monitor.reset_current_session()
             self.sync_timer_to_js()
 
     def skip_phase(self):
@@ -625,7 +628,20 @@ class PomodoroApp:
 
         self.sync_timer_to_js()
 
-        purity_data = self.distraction_monitor.get_purity_stats(max(1, actual_minutes) if actual_minutes > 0 else 1)
+        # Purely evaluate THIS finished session (not mixed with earlier sessions of the day)
+        purity_data = self.distraction_monitor.get_session_purity_stats(max(1, actual_minutes) if actual_minutes > 0 else 1)
+
+        if actual_minutes > 0:
+            goal_text = ""
+            for t in self.checklist.tasks:
+                if not t.get("done"):
+                    goal_text = t.get("text", "")
+                    break
+            if not goal_text and self.checklist.tasks:
+                goal_text = self.checklist.tasks[0].get("text", "")
+            self.distraction_monitor.archive_completed_session(self.current_session, actual_minutes, goal_text)
+        else:
+            self.distraction_monitor.reset_current_session()
 
         # Show reflection/summary modal
         if self.app_mode == "eyecare":
@@ -1056,17 +1072,28 @@ class Api:
         self._app.distraction_monitor.set_youtube_fb_study_mode(bool(enabled))
         return "ok"
 
-    def reclassify_usage_item(self, key, new_cat):
-        self._app.distraction_monitor.reclassify_item(key, new_cat)
+    def reclassify_usage_item(self, key, new_cat, scope="daily", session_num=None):
+        self._app.distraction_monitor.reclassify_item(key, new_cat, scope=scope, session_num=session_num)
         return "ok"
 
-    def friction_allow_as_study(self):
+    def friction_allow_as_study(self, mode="video"):
+        if mode == "session":
+            self._app.distraction_monitor.allow_session_youtube_study()
+        else:
+            self._app.distraction_monitor.allow_current_video_as_study()
         if self._app.current_distracted_hwnd:
-            self._app.distraction_monitor.allowed_hwnds.add(self._app.current_distracted_hwnd)
-            target_key = getattr(self._app.distraction_monitor, 'last_distracted_key', None)
-            if target_key:
-                self._app.distraction_monitor.reclassify_item(target_key, "online_study")
+            try:
+                user32.SetForegroundWindow(self._app.current_distracted_hwnd)
+            except Exception:
+                pass
         self._app.eval_js("window.hideFrictionBarrier();")
+
+    def set_custom_study_keywords(self, keywords_str):
+        self._app.distraction_monitor.set_custom_study_keywords(keywords_str)
+        kw_list = list(self._app.distraction_monitor.custom_study_keywords)
+        self._app.config["custom_study_keywords"] = kw_list
+        save_config(self._app.config)
+        return kw_list
 
     def set_target_sessions(self, target):
         self._app.target_sessions_val = int(target)
@@ -1077,6 +1104,15 @@ class Api:
     def get_purity_report(self):
         total_mins = max(1, self._app.focus_duration // 60)
         return self._app.distraction_monitor.get_purity_stats(total_mins)
+
+    def get_analytics_bundle(self):
+        total_mins = max(1, self._app.focus_duration // 60)
+        is_active = (self._app.state == STATE_FOCUS)
+        return self._app.distraction_monitor.get_analytics_bundle(
+            session_num=self._app.current_session,
+            is_focus_active=is_active,
+            total_focus_minutes=total_mins
+        )
 
     def set_custom_timer(self, minutes, mode=None):
         self._app.set_custom_timer(int(minutes), mode)
