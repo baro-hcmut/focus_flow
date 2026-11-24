@@ -1,5 +1,5 @@
 #define MyAppName "Focus Flow"
-#define MyAppVersion "2.1.0"
+#define MyAppVersion "2.1.1"
 #define MyAppPublisher "Focus Flow Team"
 #define MyAppURL "https://github.com/baro-hcmut/focus_flow"
 #define MyAppExeName "Focus Flow.exe"
@@ -16,7 +16,7 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={localappdata}\Programs\{#MyAppName}
 DisableProgramGroupPage=yes
 OutputDir=dist
-OutputBaseFilename=Focus_Flow_v2.1.0_Setup
+OutputBaseFilename=Focus_Flow_v2.1.1_Setup
 SetupIconFile=assets\focus_flow_v2.ico
 Compression=lzma2/ultra64
 SolidCompression=yes
