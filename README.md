@@ -76,7 +76,7 @@ Vào Tab **`Cài Đặt`** ở thanh điều hướng:
 ## 🚀 TẢI VỀ DÙNG NGAY (WINDOWS PORTABLE - KHÔNG CẦN CÀI PYTHON)
 
 1. Vào mục [**Releases**](https://github.com/baro-hcmut/focus_flow/releases).
-2. Tải file cài đặt **`Focus_Flow_v2.1.1_Setup.exe`** (khuyên dùng, 1-click không cần giải nén) hoặc file nén **`Focus_Flow_v2.1.1_Windows.zip`** về máy.
+2. Tải file cài đặt **`Focus_Flow_v2.1.2_Setup.exe`** (khuyên dùng, 1-click không cần giải nén) hoặc file nén **`Focus_Flow_v2.1.2_Windows.zip`** về máy.
 3. Giải nén tệp zip ➔ Nhấp đúp vào **`Chay_Focus_Flow.bat`**:
    - Tự động gỡ bỏ cảnh báo bảo mật Windows.
    - **Tự động tạo biểu tượng Focus Flow siêu nét ngoài Desktop**.

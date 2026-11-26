@@ -284,10 +284,19 @@ class DistractionMonitor:
         except Exception:
             pass
 
-    def archive_completed_session(self, session_num, actual_minutes, goal_text=""):
+    def archive_completed_session(self, session_num, actual_minutes, goal_text="", tasks_breakdown=None):
         """Snapshots the just-finished session into today's sessions_detail and resets session counters."""
         end_time_str = time.strftime("%H:%M")
         report = self.get_session_purity_stats(max(1, actual_minutes))
+        cleaned_tasks = [
+            {
+                "text": str(t.get("text", "")).strip(),
+                "seconds": max(0, int(t.get("seconds", 0) or 0)),
+                "done": bool(t.get("done", False)),
+            }
+            for t in (tasks_breakdown or [])
+            if isinstance(t, dict) and int(t.get("seconds", 0) or 0) > 0 and str(t.get("text", "")).strip()
+        ]
         snapshot = {
             "session": int(session_num),
             "start_time": self.session_start_time,
@@ -304,6 +313,7 @@ class DistractionMonitor:
             "total_tracked_seconds": report["total_tracked_seconds"],
             "total_tracked_str": report["total_tracked_str"],
             "breakdown": report["breakdown"],
+            "tasks_breakdown": cleaned_tasks,
         }
         with self._data_lock:
             self.completed_sessions_today.append(snapshot)
@@ -704,16 +714,46 @@ class DistractionMonitor:
 
         return self._build_purity_report(records_snapshot, tracked_snapshot, events_snapshot, fallback_logged_sec=today_logged_sec)
 
-    def get_analytics_bundle(self, session_num=1, is_focus_active=False, total_focus_minutes=50):
+    def get_analytics_bundle(self, session_num=1, is_focus_active=False, total_focus_minutes=50, current_tasks_breakdown=None):
         """Returns current session report, archived sessions list, and daily summary for Tab 3."""
+        current_tasks = [
+            {
+                "text": str(t.get("text", "")).strip(),
+                "seconds": max(0, int(t.get("seconds", 0) or 0)),
+                "done": bool(t.get("done", False)),
+            }
+            for t in (current_tasks_breakdown or [])
+            if isinstance(t, dict) and int(t.get("seconds", 0) or 0) > 0 and str(t.get("text", "")).strip()
+        ]
         current_report = self.get_session_purity_stats(total_focus_minutes)
         current_report["session"] = int(session_num)
         current_report["start_time"] = self.session_start_time
         current_report["is_active"] = bool(is_focus_active)
+        current_report["tasks_breakdown"] = current_tasks
 
         daily_report = self.get_purity_stats(total_focus_minutes)
         with self._data_lock:
             sessions_copy = [dict(s) for s in self.completed_sessions_today]
+
+        daily_goal_map = {}
+        for sess in sessions_copy:
+            for t in sess.get("tasks_breakdown", []):
+                txt = str(t.get("text", "")).strip()
+                sec = max(0, int(t.get("seconds", 0) or 0))
+                if txt and sec > 0:
+                    entry = daily_goal_map.setdefault(txt, {"text": txt, "seconds": 0, "done": False})
+                    entry["seconds"] += sec
+                    if t.get("done"):
+                        entry["done"] = True
+        for t in current_tasks:
+            txt = t["text"]
+            entry = daily_goal_map.setdefault(txt, {"text": txt, "seconds": 0, "done": False})
+            entry["seconds"] += t["seconds"]
+            entry["done"] = bool(t.get("done"))
+
+        daily_report["tasks_breakdown"] = sorted(
+            daily_goal_map.values(), key=lambda x: x["seconds"], reverse=True
+        )
 
         return {
             "current_session": current_report,

@@ -1871,6 +1871,43 @@
       letter-spacing: 0.02em;
     }
 
+    .task-time-badge {
+      font-size: 10px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-dim);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      padding: 1px 6px;
+      border-radius: 4px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .task-item-row.is-active-target .task-time-badge {
+      color: #cbd5e1;
+      border-color: rgba(255, 255, 255, 0.14);
+    }
+
+    .goal-breakdown-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .goal-done-tag {
+      font-size: 9.5px;
+      font-weight: 600;
+      color: #34d399;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      padding: 1px 5px;
+      border-radius: 4px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
     .task-input-field {
       flex: 1;
       font-size: 12px;
@@ -5560,7 +5597,7 @@ body[data-fx="pixel"] .ambient-pill.active {
       </div>
       <span class="brand-title">Focus Flow</span>
       <div class="status-dot" id="headerStatusDot"></div>
-      <span class="badge-app-edition" id="titlebarVersionBadge">v2.1.1</span>
+      <span class="badge-app-edition" id="titlebarVersionBadge">v2.1.2</span>
       <button class="titlebar-update-btn" id="btnTitlebarUpdate" style="display:none;" onclick="openUpdateModal()" title="Nhấp để xem bản cập nhật mới!">
         <span class="update-dot-ping"></span>
         <span id="titlebarUpdateText">Cập nhật v1.1</span>
@@ -5930,6 +5967,15 @@ body[data-fx="pixel"] .ambient-pill.active {
           <div class="prog-seg-distracted" id="progSegDistracted" style="width: 0%;"></div>
         </div>
 
+        <!-- Goal Time Summary Section -->
+        <div id="tab3GoalsSection" style="display:none; margin-top:6px;">
+          <div style="font-size:11px; font-weight:700; color:#cbd5e1; display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+            <span>THỜI GIAN MỤC TIÊU</span>
+            <span id="tab3GoalsTotalLabel" style="font-size:10.5px; font-weight:600; color:#94a3b8; font-variant-numeric:tabular-nums;"></span>
+          </div>
+          <div class="goal-breakdown-list" id="tab3GoalsBreakdownList"></div>
+        </div>
+
         <!-- App & Web List with Category Filter -->
         <div style="font-size:11px; font-weight:700; color:#cbd5e1; margin-top:6px; display:flex; justify-content:space-between; align-items:center; gap:6px;">
           <span>CHI TIẾT WEB / PHẦN MỀM</span>
@@ -6091,7 +6137,7 @@ body[data-fx="pixel"] .ambient-pill.active {
             <div>
               <div class="settings-label-title" style="display:flex; align-items:center; gap:8px;">
                 <span>Focus Flow • Pomodoro 50/10 Pro</span>
-                <span class="badge-app-edition" id="settingsVersionLabel">v2.1.1</span>
+                <span class="badge-app-edition" id="settingsVersionLabel">v2.1.2</span>
                 <span class="badge-update-alert" id="settingsUpdateAlertBadge" style="display:none; cursor:pointer;" onclick="openUpdateModal()">✨ Có bản mới</span>
               </div>
               <div class="settings-label-desc" id="settingsUpdateStatusText">Tự động kiểm tra bản cập nhật mới từ GitHub Releases</div>
@@ -6402,7 +6448,7 @@ body[data-fx="pixel"] .ambient-pill.active {
         <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255, 255, 255, 0.03); border:1px solid rgba(255, 255, 255, 0.06); padding:8px 12px; border-radius:8px; font-size:12px;">
           <div style="display:flex; align-items:center; gap:6px;">
             <span style="color:#94a3b8;">Phiên bản mới:</span>
-            <span id="updateModalNewVer" style="font-weight:600; color:#38bdf8;">v2.1.1</span>
+            <span id="updateModalNewVer" style="font-weight:600; color:#38bdf8;">v2.1.2</span>
           </div>
           <div style="display:flex; align-items:center; gap:6px; font-size:11.5px; color:#64748b;">
             <span>Đang dùng:</span>
@@ -6866,6 +6912,16 @@ body[data-fx="pixel"] .ambient-pill.active {
     // =========================================================================
     // DYNAMIC MICRO-CHECKLIST (Clean, Empty by Default)
     // =========================================================================
+    function formatCompactGoalTime(seconds) {
+      const s = Math.max(0, Math.floor(seconds || 0));
+      if (s <= 0) return "";
+      if (s < 60) return `${s}s`;
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      if (h > 0) return m > 0 ? `${h}g ${m}p` : `${h}g`;
+      return `${m}p`;
+    }
+
     function renderTasksList() {
       const container = document.getElementById("tasksListContainer");
       if (!container) return;
@@ -6910,6 +6966,8 @@ body[data-fx="pixel"] .ambient-pill.active {
           if (task.done && idx === activeTaskIndex) {
             const nextIdx = tasks.findIndex((t, i) => i !== idx && !t.done);
             if (nextIdx !== -1) activeTaskIndex = nextIdx;
+          } else if (!task.done && (!tasks[activeTaskIndex] || tasks[activeTaskIndex].done)) {
+            activeTaskIndex = idx;
           }
           renderTasksList();
           updateHeroActiveTarget();
@@ -6923,12 +6981,17 @@ body[data-fx="pixel"] .ambient-pill.active {
         input.onfocus = () => {
           if (activeTaskIndex !== idx) {
             activeTaskIndex = idx;
+            pyCall("set_active_task", idx);
             renderTasksList();
             updateHeroActiveTarget();
             // toast removed
           }
         };
-        input.onchange = () => pyCall("update_task_text", idx, input.value);
+        input.onchange = () => {
+          task.text = input.value;
+          pyCall("update_task_text", idx, input.value);
+          updateHeroActiveTarget();
+        };
         input.onkeydown = (e) => {
           if (e.key === "Enter") {
             e.preventDefault();
@@ -6945,6 +7008,15 @@ body[data-fx="pixel"] .ambient-pill.active {
           activeBadge.title = "Mục tiêu trọng tâm ca học hiện tại";
         }
 
+        // Compact Goal Time Badge (Updated in-place without rebuilding DOM)
+        const timeText = formatCompactGoalTime(task.spent_seconds || 0);
+        const timeBadge = document.createElement("span");
+        timeBadge.className = "task-time-badge";
+        timeBadge.setAttribute("data-task-time", String(idx));
+        timeBadge.innerText = timeText;
+        timeBadge.style.display = timeText ? "inline-flex" : "none";
+        timeBadge.title = "Tổng thời gian đã học cho mục tiêu này";
+
         // Trash Button
         const trash = document.createElement("button");
         trash.className = "btn-delete-task";
@@ -6954,6 +7026,7 @@ body[data-fx="pixel"] .ambient-pill.active {
           e.stopPropagation();
           pyCall("delete_task", idx);
           tasks.splice(idx, 1);
+          if (idx < activeTaskIndex) activeTaskIndex--;
           if (activeTaskIndex >= tasks.length) activeTaskIndex = Math.max(0, tasks.length - 1);
           renderTasksList();
           updateHeroActiveTarget();
@@ -6962,6 +7035,7 @@ body[data-fx="pixel"] .ambient-pill.active {
         row.appendChild(chk);
         row.appendChild(input);
         if (activeBadge) row.appendChild(activeBadge);
+        row.appendChild(timeBadge);
         row.appendChild(trash);
         container.appendChild(row);
       });
@@ -6997,9 +7071,10 @@ body[data-fx="pixel"] .ambient-pill.active {
         const input = document.getElementById("newTaskInput");
         const val = input.value.trim();
         if (val) {
+          const hadUnfinished = tasks.some(t => !t.done);
           pyCall("add_task", val);
-          tasks.push({ text: val, done: false });
-          if (tasks.length === 1) activeTaskIndex = 0;
+          tasks.push({ text: val, done: false, spent_seconds: 0 });
+          if (!hadUnfinished) activeTaskIndex = tasks.length - 1;
           input.value = "";
           renderTasksList();
           // toast removed
@@ -7020,12 +7095,30 @@ body[data-fx="pixel"] .ambient-pill.active {
       if (inp) inp.focus();
     }
 
-    window.updateTasks = function(newTasks) {
+    window.updateTasks = function(newTasks, serverActiveIdx) {
       if (newTasks && Array.isArray(newTasks)) {
         tasks = newTasks;
-        if (activeTaskIndex >= tasks.length) activeTaskIndex = 0;
+        if (typeof serverActiveIdx === "number" && serverActiveIdx >= 0 && serverActiveIdx < tasks.length) {
+          activeTaskIndex = serverActiveIdx;
+        } else if (activeTaskIndex >= tasks.length) {
+          activeTaskIndex = 0;
+        }
         renderTasksList();
       }
+    };
+
+    window.updateTaskTimes = function(tickInfo) {
+      if (!tickInfo || !Array.isArray(tickInfo.times)) return;
+      tickInfo.times.forEach((sec, idx) => {
+        if (tasks[idx]) tasks[idx].spent_seconds = sec;
+        const badge = document.querySelector(`.task-time-badge[data-task-time="${idx}"]`);
+        if (badge) {
+          const txt = formatCompactGoalTime(sec);
+          if (badge.innerText !== txt) badge.innerText = txt;
+          const targetDisp = txt ? "inline-flex" : "none";
+          if (badge.style.display !== targetDisp) badge.style.display = targetDisp;
+        }
+      });
     };
 
     // =========================================================================
@@ -7411,7 +7504,7 @@ function copyPuritySummary() {
     let analyticsScope = "current"; // "current" | "sessions" | "daily"
     let selectedSessionNum = null;
     let breakdownFilter = "all"; // "all" | "study" | "distraction"
-    let expandedGroups = { distraction: false, study: false, filtered: false };
+    let expandedGroups = { distraction: false, study: false, filtered: false, goals: false };
 
     function setAnalyticsScope(scope) {
       analyticsScope = scope;
@@ -7419,13 +7512,13 @@ function copyPuritySummary() {
         const btn = document.getElementById(`scopeBtn${s.charAt(0).toUpperCase() + s.slice(1)}`);
         if (btn) btn.classList.toggle("active", s === scope);
       });
-      expandedGroups = { distraction: false, study: false, filtered: false };
+      expandedGroups = { distraction: false, study: false, filtered: false, goals: false };
       renderAnalyticsView();
     }
 
     function selectAnalyticsSession(sessNum) {
       selectedSessionNum = sessNum;
-      expandedGroups = { distraction: false, study: false, filtered: false };
+      expandedGroups = { distraction: false, study: false, filtered: false, goals: false };
       renderAnalyticsView();
     }
 
@@ -7573,9 +7666,84 @@ function copyPuritySummary() {
       return row;
     }
 
+    function formatCompactHms(sec) {
+      const total = Math.max(0, Math.floor(sec || 0));
+      const h = Math.floor(total / 3600);
+      const m = Math.floor((total % 3600) / 60);
+      const s = total % 60;
+      if (h > 0) return m > 0 ? `${h}g ${m}p` : `${h}g`;
+      if (m > 0) return `${m}p ${s}s`;
+      return `${s}s`;
+    }
+
+    function renderGoalsBreakdown(data) {
+      const section = document.getElementById("tab3GoalsSection");
+      const listEl = document.getElementById("tab3GoalsBreakdownList");
+      const totalLbl = document.getElementById("tab3GoalsTotalLabel");
+      if (!section || !listEl) return;
+
+      const goals = Array.isArray(data && data.tasks_breakdown) ? data.tasks_breakdown : [];
+      if (goals.length === 0) {
+        if (analyticsScope === "current" && tasks.length > 0) {
+          section.style.display = "block";
+          if (totalLbl) totalLbl.innerText = "";
+          listEl.innerHTML = `<div style="font-size:11px; color:var(--text-dim); padding:6px 8px; background:rgba(15,23,42,0.4); border-radius:6px; border:1px solid rgba(255,255,255,0.05);">Bắt đầu ca học để ghi nhận thời gian cho từng mục tiêu.</div>`;
+        } else {
+          section.style.display = "none";
+          listEl.innerHTML = "";
+        }
+        return;
+      }
+
+      section.style.display = "block";
+      const totalGoalSec = goals.reduce((acc, g) => acc + (g.seconds || 0), 0);
+      if (totalLbl) totalLbl.innerText = formatCompactHms(totalGoalSec);
+      listEl.innerHTML = "";
+
+      const defaultLimit = 3;
+      const isExpanded = !!expandedGroups.goals;
+      const visible = isExpanded ? goals : goals.slice(0, defaultLimit);
+
+      visible.forEach(g => {
+        const sec = Math.max(0, g.seconds || 0);
+        const pct = totalGoalSec > 0 ? Math.min(100, Math.max(0, Math.round((sec / totalGoalSec) * 100))) : 0;
+        const row = document.createElement("div");
+        row.className = "app-breakdown-row";
+        const safeText = escapeUpdateHtml(g.text || "");
+        const dotColor = g.done ? "var(--emerald)" : "#38bdf8";
+        row.innerHTML = `
+          <div class="app-info-line">
+            <span class="app-name" title="${safeText}">
+              <span style="width:6px; height:6px; border-radius:50%; background:${dotColor}; flex-shrink:0;"></span>
+              <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${safeText}</span>
+            </span>
+            <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+              ${g.done ? '<span class="goal-done-tag">Xong</span>' : ''}
+              <span class="app-duration-tag">${formatCompactHms(sec)} (${pct}%)</span>
+            </div>
+          </div>
+          <div class="app-bar-track">
+            <div class="app-bar-fill" style="width:${pct}%; background:${dotColor};"></div>
+          </div>
+        `;
+        listEl.appendChild(row);
+      });
+
+      const hiddenCount = goals.length - defaultLimit;
+      if (hiddenCount > 0) {
+        const btn = document.createElement("button");
+        btn.className = "btn-breakdown-toggle";
+        btn.innerText = isExpanded ? "Thu gọn bớt" : `Xem thêm ${hiddenCount} mục tiêu khác`;
+        btn.onclick = () => toggleGroupExpand("goals");
+        listEl.appendChild(btn);
+      }
+    }
+
     function renderAnalyticsContent(data) {
       if (!data) return;
       cachedPurityData = data;
+
+      renderGoalsBreakdown(data);
 
       document.getElementById("statDeepTime").innerText = data.deep_work_str || "0 giây";
       document.getElementById("statOnlineTime").innerText = data.online_study_str || "0 giây";
@@ -8518,6 +8686,12 @@ function copyPuritySummary() {
       } else {
         tasks = []; // Start 100% clean
       }
+      if (config && typeof config.active_task_index === "number" && config.active_task_index >= 0 && config.active_task_index < tasks.length) {
+        activeTaskIndex = config.active_task_index;
+      } else {
+        const firstUnfinished = tasks.findIndex(t => !t.done);
+        activeTaskIndex = firstUnfinished !== -1 ? firstUnfinished : 0;
+      }
       if (initialParking && Array.isArray(initialParking) && initialParking.length > 0) {
         parkingNotes = initialParking;
       }
@@ -8752,103 +8926,139 @@ function copyPuritySummary() {
   // ==========================================================================
 
   // ============================================================================
-  // AUTHENTIC BOTANICAL DRAWING HELPERS: REALISTIC PETALS, LEAVES & BLOSSOMS
+  // AUTHENTIC BOTANICAL DRAWING HELPERS (Offscreen Sprite Cache for 60fps+ Smoothness)
   // ============================================================================
-  function drawRealPetalShape(ctx, size, color, alpha) {
+  const _botanicalSpriteCache = {};
+  const _BOTANICAL_BASE_SIZE = 28;
+  const _BOTANICAL_SPRITE_DIM = 96; // 96x96 canvas leaves generous glow/blur margin around 28px geometry
+
+  function _getBotanicalSprite(cacheKey, drawRawFn, blurPx = 0) {
+    if (_botanicalSpriteCache[cacheKey]) return _botanicalSpriteCache[cacheKey];
+    const off = document.createElement('canvas');
+    off.width = _BOTANICAL_SPRITE_DIM;
+    off.height = _BOTANICAL_SPRITE_DIM;
+    const octx = off.getContext('2d');
+    const half = _BOTANICAL_SPRITE_DIM * 0.5;
+    octx.save();
+    octx.translate(half, half);
+    if (blurPx > 0) octx.filter = `blur(${blurPx}px)`;
+    drawRawFn(octx, _BOTANICAL_BASE_SIZE);
+    octx.restore();
+    _botanicalSpriteCache[cacheKey] = off;
+    return off;
+  }
+
+  function drawRealPetalShape(ctx, size, color, alpha, isBlurred = false) {
+    const blurPx = isBlurred ? 4 : 0;
+    const key = `petal:${color}:${blurPx}`;
+    const sprite = _getBotanicalSprite(key, (octx, s) => {
+      octx.fillStyle = color;
+      octx.shadowColor = 'rgba(244, 114, 182, 0.42)';
+      octx.shadowBlur = 4;
+
+      octx.beginPath();
+      octx.moveTo(0, s * 0.7);
+      octx.bezierCurveTo(s * 0.7, s * 0.3, s * 0.75, -s * 0.5, s * 0.2, -s);
+      octx.lineTo(0, -s * 0.85);
+      octx.lineTo(-s * 0.2, -s);
+      octx.bezierCurveTo(-s * 0.75, -s * 0.5, -s * 0.7, s * 0.3, 0, s * 0.7);
+      octx.fill();
+
+      octx.shadowBlur = 0;
+      octx.beginPath();
+      octx.moveTo(0, s * 0.5);
+      octx.lineTo(0, -s * 0.5);
+      octx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+      octx.lineWidth = 1.6;
+      octx.stroke();
+    }, blurPx);
+
+    const drawHalf = (size / _BOTANICAL_BASE_SIZE) * (_BOTANICAL_SPRITE_DIM * 0.5);
     ctx.save();
-    ctx.fillStyle = color;
-    ctx.globalAlpha = alpha;
-    ctx.shadowColor = 'rgba(244, 114, 182, 0.45)';
-    ctx.shadowBlur = 4;
-
-    ctx.beginPath();
-    ctx.moveTo(0, size * 0.7);
-    ctx.bezierCurveTo(size * 0.7, size * 0.3, size * 0.75, -size * 0.5, size * 0.2, -size);
-    ctx.lineTo(0, -size * 0.85); // delicate cleft notch at tip
-    ctx.lineTo(-size * 0.2, -size);
-    ctx.bezierCurveTo(-size * 0.75, -size * 0.5, -size * 0.7, size * 0.3, 0, size * 0.7);
-    ctx.fill();
-
-    // Central petal vein
-    ctx.beginPath();
-    ctx.moveTo(0, size * 0.5);
-    ctx.lineTo(0, -size * 0.5);
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
-    ctx.lineWidth = 0.8;
-    ctx.stroke();
+    ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
+    ctx.drawImage(sprite, -drawHalf, -drawHalf, drawHalf * 2, drawHalf * 2);
     ctx.restore();
   }
 
   function drawRealLeafShape(ctx, size, color, alpha) {
+    const key = `leaf:${color}`;
+    const sprite = _getBotanicalSprite(key, (octx, s) => {
+      octx.fillStyle = color;
+      octx.shadowColor = 'rgba(74, 222, 128, 0.42)';
+      octx.shadowBlur = 4;
+
+      octx.beginPath();
+      octx.moveTo(0, s * 0.9);
+      octx.bezierCurveTo(s * 0.55, s * 0.4, s * 0.55, -s * 0.3, 0, -s);
+      octx.bezierCurveTo(-s * 0.55, -s * 0.3, -s * 0.55, s * 0.4, 0, s * 0.9);
+      octx.fill();
+
+      octx.shadowBlur = 0;
+      octx.beginPath();
+      octx.moveTo(0, s * 0.75);
+      octx.lineTo(0, -s * 0.8);
+      octx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+      octx.lineWidth = 1.6;
+      octx.stroke();
+
+      octx.beginPath();
+      octx.moveTo(0, s * 0.2); octx.lineTo(s * 0.22, 0);
+      octx.moveTo(0, -s * 0.2); octx.lineTo(s * 0.2, -s * 0.4);
+      octx.moveTo(0, s * 0.2); octx.lineTo(-s * 0.22, 0);
+      octx.moveTo(0, -s * 0.2); octx.lineTo(-s * 0.2, -s * 0.4);
+      octx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+      octx.lineWidth = 1.2;
+      octx.stroke();
+    });
+
+    const drawHalf = (size / _BOTANICAL_BASE_SIZE) * (_BOTANICAL_SPRITE_DIM * 0.5);
     ctx.save();
-    ctx.fillStyle = color;
-    ctx.globalAlpha = alpha;
-    ctx.shadowColor = 'rgba(74, 222, 128, 0.45)';
-    ctx.shadowBlur = 4;
-
-    ctx.beginPath();
-    ctx.moveTo(0, size * 0.9);
-    ctx.bezierCurveTo(size * 0.55, size * 0.4, size * 0.55, -size * 0.3, 0, -size);
-    ctx.bezierCurveTo(-size * 0.55, -size * 0.3, -size * 0.55, size * 0.4, 0, size * 0.9);
-    ctx.fill();
-
-    // Central leaf spine / vein
-    ctx.beginPath();
-    ctx.moveTo(0, size * 0.75);
-    ctx.lineTo(0, -size * 0.8);
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
-    ctx.lineWidth = 0.8;
-    ctx.stroke();
-
-    // Lateral leaf veins
-    ctx.beginPath();
-    ctx.moveTo(0, size * 0.2); ctx.lineTo(size * 0.22, 0);
-    ctx.moveTo(0, -size * 0.2); ctx.lineTo(size * 0.2, -size * 0.4);
-    ctx.moveTo(0, size * 0.2); ctx.lineTo(-size * 0.22, 0);
-    ctx.moveTo(0, -size * 0.2); ctx.lineTo(-size * 0.2, -size * 0.4);
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
-    ctx.lineWidth = 0.6;
-    ctx.stroke();
+    ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
+    ctx.drawImage(sprite, -drawHalf, -drawHalf, drawHalf * 2, drawHalf * 2);
     ctx.restore();
   }
 
   function drawRealFlowerShape(ctx, size, alpha) {
+    const sprite = _getBotanicalSprite('flower:default', (octx, s) => {
+      const step = (Math.PI * 2) / 5;
+      for (let i = 0; i < 5; i++) {
+        octx.save();
+        octx.rotate(i * step);
+        octx.fillStyle = '#fbcfe8';
+        octx.shadowColor = 'rgba(244, 114, 182, 0.42)';
+        octx.shadowBlur = 4;
+
+        octx.beginPath();
+        octx.moveTo(0, 0);
+        octx.bezierCurveTo(s * 0.45, -s * 0.4, s * 0.45, -s * 0.9, s * 0.12, -s);
+        octx.lineTo(0, -s * 0.85);
+        octx.lineTo(-s * 0.12, -s);
+        octx.bezierCurveTo(-s * 0.45, -s * 0.9, -s * 0.45, -s * 0.4, 0, 0);
+        octx.fill();
+        octx.restore();
+      }
+
+      octx.beginPath();
+      octx.arc(0, 0, s * 0.18, 0, Math.PI * 2);
+      octx.fillStyle = '#f43f5e';
+      octx.fill();
+
+      for (let j = 0; j < 5; j++) {
+        const sa = j * step + step * 0.5;
+        const sx = Math.cos(sa) * s * 0.32;
+        const sy = Math.sin(sa) * s * 0.32;
+        octx.beginPath();
+        octx.moveTo(0, 0); octx.lineTo(sx, sy);
+        octx.strokeStyle = '#fef08a'; octx.lineWidth = 1.6; octx.stroke();
+        octx.beginPath(); octx.arc(sx, sy, s * 0.08, 0, Math.PI * 2);
+        octx.fillStyle = '#fef08a'; octx.fill();
+      }
+    });
+
+    const drawHalf = (size / _BOTANICAL_BASE_SIZE) * (_BOTANICAL_SPRITE_DIM * 0.5);
     ctx.save();
-    ctx.globalAlpha = alpha;
-    const step = (Math.PI * 2) / 5;
-    for (let i = 0; i < 5; i++) {
-      ctx.save();
-      ctx.rotate(i * step);
-      ctx.fillStyle = '#fbcfe8';
-      ctx.shadowColor = 'rgba(244, 114, 182, 0.45)';
-      ctx.shadowBlur = 4;
-
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.bezierCurveTo(size * 0.45, -size * 0.4, size * 0.45, -size * 0.9, size * 0.12, -size);
-      ctx.lineTo(0, -size * 0.85);
-      ctx.lineTo(-size * 0.12, -size);
-      ctx.bezierCurveTo(-size * 0.45, -size * 0.9, -size * 0.45, -size * 0.4, 0, 0);
-      ctx.fill();
-      ctx.restore();
-    }
-
-    // Flower core & golden stamens
-    ctx.beginPath();
-    ctx.arc(0, 0, size * 0.18, 0, Math.PI * 2);
-    ctx.fillStyle = '#f43f5e';
-    ctx.fill();
-
-    for (let j = 0; j < 5; j++) {
-      const sa = j * step + step * 0.5;
-      const sx = Math.cos(sa) * size * 0.32;
-      const sy = Math.sin(sa) * size * 0.32;
-      ctx.beginPath();
-      ctx.moveTo(0, 0); ctx.lineTo(sx, sy);
-      ctx.strokeStyle = '#fef08a'; ctx.lineWidth = 0.8; ctx.stroke();
-      ctx.beginPath(); ctx.arc(sx, sy, size * 0.08, 0, Math.PI * 2);
-      ctx.fillStyle = '#fef08a'; ctx.fill();
-    }
+    ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
+    ctx.drawImage(sprite, -drawHalf, -drawHalf, drawHalf * 2, drawHalf * 2);
     ctx.restore();
   }
 
@@ -8926,6 +9136,11 @@ function copyPuritySummary() {
       this.ctx = this.canvas.getContext('2d');
       this.isRunning = false;
       this.animId = null;
+      this.lastRenderTime = 0;
+      this.dtScale = 1.0;
+      this._sakuraBgGrad = null;
+      this._sakuraBgW = 0;
+      this._sakuraBgH = 0;
       this.width = window.innerWidth;
       this.height = window.innerHeight;
       this.currentStyle = localStorage.getItem('mini_hud_fx') || 'twilight';
@@ -9372,17 +9587,22 @@ function copyPuritySummary() {
     }
 
     renderSakura(ctx, now) {
-      // Midnight Indigo Slate ambient backdrop wash
-      const bg = ctx.createLinearGradient(0, 0, this.width, this.height);
-      bg.addColorStop(0, 'rgba(28, 25, 53, 0.15)');
-      bg.addColorStop(0.5, 'rgba(27, 31, 63, 0.10)');
-      bg.addColorStop(1, 'rgba(17, 22, 45, 0.06)');
-      ctx.fillStyle = bg;
+      const dt = this.dtScale || 1.0;
+      if (!this._sakuraBgGrad || this._sakuraBgW !== this.width || this._sakuraBgH !== this.height) {
+        const bg = ctx.createLinearGradient(0, 0, this.width, this.height);
+        bg.addColorStop(0, 'rgba(28, 25, 53, 0.15)');
+        bg.addColorStop(0.5, 'rgba(27, 31, 63, 0.10)');
+        bg.addColorStop(1, 'rgba(17, 22, 45, 0.06)');
+        this._sakuraBgGrad = bg;
+        this._sakuraBgW = this.width;
+        this._sakuraBgH = this.height;
+      }
+      ctx.fillStyle = this._sakuraBgGrad;
       ctx.fillRect(0, 0, this.width, this.height);
 
       // Organic Wind Flurry trigger check: 100% Pure Pink Petals & Cherry Blossoms (NO green leaves)
       if (!this.sakuraGust && (!this.nextSakuraGustTime || now > this.nextSakuraGustTime)) {
-        const gustDuration = 4800;
+        const gustDuration = 5200;
         const items = [];
         const baseY = this.height * 0.38;
         const pColors = ['#fbcfe8', '#f472b6', '#fda4af', '#f9a8d4', '#fff1f2'];
@@ -9391,15 +9611,15 @@ function copyPuritySummary() {
         types.forEach(t => {
           items.push({
             type: t,
-            startX: -30 - Math.random() * 140, // 2D cloud dispersion: NO single string!
+            startX: -30 - Math.random() * 140,
             startY: baseY + (Math.random() - 0.5) * 90,
-            speedX: (this.width + 240) / gustDuration * (0.86 + Math.random() * 0.32), // Independent velocities
+            speedX: (this.width + 240) / gustDuration * (0.86 + Math.random() * 0.32),
             waveFreq: 0.0016 + Math.random() * 0.0014,
             waveAmp: 12 + Math.random() * 18,
             driftYRate: (Math.random() - 0.45) * 12,
             phase: Math.random() * Math.PI * 2,
             baseAngle: (Math.random() - 0.5) * 0.3,
-            size: (t === 'flower') ? (Math.random() * 3 + 13.5) : (Math.random() * 3.0 + 9.5), // Larger luscious petals: 9.5px - 12.5px
+            size: (t === 'flower') ? (Math.random() * 3 + 13.5) : (Math.random() * 3.0 + 9.5),
             color: pColors[Math.floor(Math.random() * pColors.length)],
             baseAlpha: (t === 'flower') ? 0.95 : 0.90
           });
@@ -9412,31 +9632,34 @@ function copyPuritySummary() {
         };
       }
 
-      // Wind force lifts the entire scene naturally when gust is active
+      // Smooth C1 raised-sine wind curve: zero abrupt impulse at start or end
       let breezeForce = 0;
       if (this.sakuraGust) {
-        const elapsed = now - this.sakuraGust.startTime;
+        const elapsed = Math.max(0, now - this.sakuraGust.startTime);
         const prog = elapsed / this.sakuraGust.duration;
         if (prog <= 1.0) {
-          breezeForce = Math.sin(prog * Math.PI) * 0.65;
+          const s = Math.sin(prog * Math.PI);
+          breezeForce = s * s * 0.72;
         }
       }
 
-      // 1. HOTARU (Convection: rising upwards, glowing warm gold & mint)
+      // 1. HOTARU (Convection: rising upwards, lightweight two-pass glow without shadowBlur)
       if (this.sakuraFireflies) {
         this.sakuraFireflies.forEach(f => {
-          f.x += f.vx + breezeForce * 0.3 + Math.sin(now * 0.0014 + f.phase) * 0.22;
-          f.y += f.vy;
+          f.x += (f.vx + breezeForce * 0.3 + Math.sin(now * 0.0014 + f.phase) * 0.22) * dt;
+          f.y += f.vy * dt;
           if (f.y < -12) { f.y = this.height + 12; f.x = Math.random() * this.width; }
           if (f.x > this.width + 12) f.x = -12;
           if (f.x < -12) f.x = this.width + 12;
 
           const pulse = 0.35 + 0.65 * Math.sin(now * f.pulseFreq + f.phase);
           ctx.save();
-          ctx.globalAlpha = pulse * 0.85;
           ctx.fillStyle = f.isMint ? '#a7f3d0' : '#fef08a';
-          ctx.shadowColor = f.isMint ? 'rgba(167, 243, 208, 0.8)' : 'rgba(254, 240, 138, 0.8)';
-          ctx.shadowBlur = 6;
+          ctx.globalAlpha = pulse * 0.20;
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, f.r * 2.6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = pulse * 0.85;
           ctx.beginPath();
           ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
           ctx.fill();
@@ -9447,8 +9670,8 @@ function copyPuritySummary() {
       // 2. LAYER 1: Deep Background Petals (Tiny, soft, distant fog of petals)
       if (this.sakuraBgPetals) {
         this.sakuraBgPetals.forEach(p => {
-          p.baseX += p.driftX + breezeForce * 0.4;
-          p.y += p.speedY - breezeForce * 0.04;
+          p.baseX += (p.driftX + breezeForce * 0.4) * dt;
+          p.y += (p.speedY - breezeForce * 0.04) * dt;
           p.x = p.baseX + Math.sin(now * p.swayFreq + p.phase) * p.swayAmp;
           if (p.y > this.height + 15) { p.y = -15; p.baseX = Math.random() * (this.width + 60) - 30; p.x = p.baseX; }
           if (p.baseX > this.width + 25) { p.baseX = -25; p.x = p.baseX; }
@@ -9464,8 +9687,8 @@ function copyPuritySummary() {
       // 3. LAYER 2: Midground Crisp Petals (Real notched shape + subtle vein)
       if (this.sakuraPetals) {
         this.sakuraPetals.forEach(p => {
-          p.baseX += p.driftX + breezeForce * p.windSensitivity;
-          p.y += p.speedY - breezeForce * 0.08;
+          p.baseX += (p.driftX + breezeForce * p.windSensitivity) * dt;
+          p.y += (p.speedY - breezeForce * 0.08) * dt;
           p.x = p.baseX + Math.sin(now * p.swayFreq + p.phase) * p.swayAmp;
           const rock = Math.sin(now * p.rockFreq + p.phase) * p.rockAmp;
           const currentAngle = p.baseAngle + rock + breezeForce * 0.18;
@@ -9483,13 +9706,13 @@ function copyPuritySummary() {
         });
       }
 
-      // 4. LAYER 2B: Ambient Whole 5-Petal Blossoms (Slow serene Ghibli rotation)
+      // 4. LAYER 2B: Ambient Whole 5-Petal Blossoms (Slow serene rotation)
       if (this.sakuraBlossoms) {
         this.sakuraBlossoms.forEach(b => {
-          b.baseX += b.driftX + breezeForce * 0.7;
-          b.y += b.speedY - breezeForce * 0.06;
+          b.baseX += (b.driftX + breezeForce * 0.7) * dt;
+          b.y += (b.speedY - breezeForce * 0.06) * dt;
           b.x = b.baseX + Math.sin(now * b.swayFreq + b.phase) * b.swayAmp;
-          b.angle += b.rotSpeed;
+          b.angle += b.rotSpeed * dt;
 
           if (b.y > this.height + 25) { b.y = -22; b.baseX = Math.random() * (this.width + 60) - 30; b.x = b.baseX; }
           if (b.baseX > this.width + 35) { b.baseX = -35; b.x = b.baseX; }
@@ -9502,9 +9725,9 @@ function copyPuritySummary() {
         });
       }
 
-      // 5. ORGANIC WIND FLURRY (No String! Individual 2D trajectories)
+      // 5. ORGANIC WIND FLURRY (Wall-time interpolated glide with cached crisp sprites)
       if (this.sakuraGust) {
-        const elapsed = now - this.sakuraGust.startTime;
+        const elapsed = Math.max(0, now - this.sakuraGust.startTime);
         let activeCount = 0;
 
         this.sakuraGust.items.forEach(item => {
@@ -9545,13 +9768,13 @@ function copyPuritySummary() {
         }
       }
 
-      // 6. LAYER 3: Foreground Bokeh Petals (Cinematic soft blur camera pass)
+      // 6. LAYER 3: Foreground Bokeh Petals (Pre-blurred offscreen sprite, zero runtime ctx.filter cost)
       if (this.sakuraFgPetals) {
         this.sakuraFgPetals.forEach(p => {
-          p.baseX += p.driftX + breezeForce * 1.1;
-          p.y += p.speedY - breezeForce * 0.08;
+          p.baseX += (p.driftX + breezeForce * 1.1) * dt;
+          p.y += (p.speedY - breezeForce * 0.08) * dt;
           p.x = p.baseX + Math.sin(now * p.swayFreq + p.phase) * p.swayAmp;
-          p.angle += 0.0006;
+          p.angle += 0.0006 * dt;
 
           if (p.y > this.height + 35) { p.y = -35; p.baseX = Math.random() * (this.width + 40) - 20; p.x = p.baseX; }
           if (p.baseX > this.width + 40) { p.baseX = -40; p.x = p.baseX; }
@@ -9559,9 +9782,7 @@ function copyPuritySummary() {
           ctx.save();
           ctx.translate(p.x, p.y);
           ctx.rotate(p.angle);
-          ctx.filter = 'blur(4px)';
-          drawRealPetalShape(ctx, p.size, p.color, p.alpha);
-          ctx.filter = 'none';
+          drawRealPetalShape(ctx, p.size, p.color, p.alpha, true);
           ctx.restore();
         });
       }
@@ -10086,7 +10307,10 @@ function copyPuritySummary() {
     render(timestamp) {
       if (!this.isRunning) return;
       const ctx = this.ctx;
-      const now = timestamp || performance.now();
+      const now = performance.now();
+      const rawDt = this.lastRenderTime ? (now - this.lastRenderTime) : 16.6667;
+      this.lastRenderTime = now;
+      this.dtScale = Math.min(2.4, Math.max(0.25, rawDt / 16.6667));
       ctx.clearRect(0, 0, this.width, this.height);
 
       try {
@@ -10119,6 +10343,7 @@ function copyPuritySummary() {
     start() {
       if (this.isRunning) return;
       this.isRunning = true;
+      this.lastRenderTime = performance.now();
       this.handleResize();
       this.animId = requestAnimationFrame(t => this.render(t));
     }
@@ -10680,17 +10905,22 @@ function copyPuritySummary() {
 
     // --- RENDER 2: SAKURA BREEZE ---
     renderSakura(ctx, now) {
-      // Midnight Indigo Slate ambient (100% harmonious with Mini HUD backdrop)
-      const bg = ctx.createLinearGradient(0, 0, this.width, this.height);
-      bg.addColorStop(0, 'rgba(28, 25, 53, 0.15)');
-      bg.addColorStop(0.5, 'rgba(27, 31, 63, 0.10)');
-      bg.addColorStop(1, 'rgba(17, 22, 45, 0.06)');
-      ctx.fillStyle = bg;
+      const dt = this.dtScale || 1.0;
+      if (!this._sakuraBgGrad || this._sakuraBgW !== this.width || this._sakuraBgH !== this.height) {
+        const bg = ctx.createLinearGradient(0, 0, this.width, this.height);
+        bg.addColorStop(0, 'rgba(28, 25, 53, 0.15)');
+        bg.addColorStop(0.5, 'rgba(27, 31, 63, 0.10)');
+        bg.addColorStop(1, 'rgba(17, 22, 45, 0.06)');
+        this._sakuraBgGrad = bg;
+        this._sakuraBgW = this.width;
+        this._sakuraBgH = this.height;
+      }
+      ctx.fillStyle = this._sakuraBgGrad;
       ctx.fillRect(0, 0, this.width, this.height);
 
       // Mini Organic Gust check (100% pure pink petals & mini blossom, no green leaves)
       if (!this.sakuraGust && (!this.nextSakuraGustTime || now > this.nextSakuraGustTime)) {
-        const miniDuration = 3600;
+        const miniDuration = 3900;
         const miniItems = [
           { type: 'petal', startX: -15, startY: this.height * 0.40, speedX: (this.width + 60) / miniDuration * 1.05, waveFreq: 0.0022, waveAmp: 4, phase: 0, size: 7.2, color: '#fbcfe8' },
           { type: 'flower', startX: -40, startY: this.height * 0.55, speedX: (this.width + 60) / miniDuration * 0.95, waveFreq: 0.0018, waveAmp: 5, phase: 1.5, size: 9.8, color: '#fda4af' },
@@ -10705,28 +10935,31 @@ function copyPuritySummary() {
 
       let breezeForce = 0;
       if (this.sakuraGust) {
-        const elapsed = now - this.sakuraGust.startTime;
+        const elapsed = Math.max(0, now - this.sakuraGust.startTime);
         const prog = elapsed / this.sakuraGust.duration;
         if (prog <= 1.0) {
-          breezeForce = Math.sin(prog * Math.PI) * 0.50;
+          const s = Math.sin(prog * Math.PI);
+          breezeForce = s * s * 0.56;
         }
       }
 
-      // Hotaru rising on Mini
+      // Hotaru rising on Mini (two-pass glow, zero shadowBlur)
       if (this.sakuraFireflies) {
         this.sakuraFireflies.forEach(f => {
-          f.x += f.vx + breezeForce * 0.25;
-          f.y += f.vy;
+          f.x += (f.vx + breezeForce * 0.25) * dt;
+          f.y += f.vy * dt;
           if (f.y < -8) { f.y = this.height + 8; f.x = Math.random() * this.width; }
           if (f.x > this.width + 8) f.x = -8;
           if (f.x < -8) f.x = this.width + 8;
 
           const pulse = 0.35 + 0.65 * Math.sin(now * f.pulseFreq + f.phase);
           ctx.save();
-          ctx.globalAlpha = pulse * 0.80;
           ctx.fillStyle = '#fef08a';
-          ctx.shadowColor = 'rgba(254, 240, 138, 0.7)';
-          ctx.shadowBlur = 4;
+          ctx.globalAlpha = pulse * 0.20;
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, f.r * 2.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = pulse * 0.80;
           ctx.beginPath();
           ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
           ctx.fill();
@@ -10737,8 +10970,8 @@ function copyPuritySummary() {
       // Background tiny petals
       if (this.sakuraBgPetals) {
         this.sakuraBgPetals.forEach(p => {
-          p.baseX += p.driftX + breezeForce * 0.3;
-          p.y += p.speedY;
+          p.baseX += (p.driftX + breezeForce * 0.3) * dt;
+          p.y += p.speedY * dt;
           p.x = p.baseX + Math.sin(now * p.swayFreq + p.phase) * p.swayAmp;
           if (p.y > this.height + 10) { p.y = -10; p.baseX = Math.random() * (this.width + 30) - 15; p.x = p.baseX; }
           if (p.baseX > this.width + 15) { p.baseX = -15; p.x = p.baseX; }
@@ -10754,8 +10987,8 @@ function copyPuritySummary() {
       // Midground crisp petals
       if (this.sakuraPetals) {
         this.sakuraPetals.forEach(p => {
-          p.baseX += p.driftX + breezeForce * p.windSensitivity;
-          p.y += p.speedY - breezeForce * 0.05;
+          p.baseX += (p.driftX + breezeForce * p.windSensitivity) * dt;
+          p.y += (p.speedY - breezeForce * 0.05) * dt;
           p.x = p.baseX + Math.sin(now * p.swayFreq + p.phase) * p.swayAmp;
           const currentAngle = p.baseAngle + Math.sin(now * p.rockFreq + p.phase) * p.rockAmp + breezeForce * 0.15;
           const tiltScale = 0.78 + 0.22 * Math.cos(now * p.rockFreq * 1.2 + p.phase);
@@ -10781,10 +11014,10 @@ function copyPuritySummary() {
           const sAmp = (typeof b.swayAmp === 'number' && !isNaN(b.swayAmp)) ? b.swayAmp : 2.5;
           const rSpd = (typeof b.rotSpeed === 'number' && !isNaN(b.rotSpeed)) ? b.rotSpeed : 0.0004;
 
-          b.baseX += drift + breezeForce * 0.5;
-          b.y += spdY;
+          b.baseX += (drift + breezeForce * 0.5) * dt;
+          b.y += spdY * dt;
           b.x = b.baseX + Math.sin(now * sFreq + b.phase) * sAmp;
-          b.angle += rSpd;
+          b.angle += rSpd * dt;
 
           if (b.y > this.height + 18) {
             b.y = -18;
@@ -10807,19 +11040,20 @@ function copyPuritySummary() {
         });
       }
 
-      // Mini gust items (no string!)
+      // Mini gust items (smooth positive clamped edgeFade, no left-edge pop)
       if (this.sakuraGust) {
-        const elapsed = now - this.sakuraGust.startTime;
+        const elapsed = Math.max(0, now - this.sakuraGust.startTime);
         let activeCount = 0;
         this.sakuraGust.items.forEach(item => {
           const x = item.startX + item.speedX * elapsed;
           const y = item.startY + Math.sin(elapsed * item.waveFreq + item.phase) * item.waveAmp;
           if (x > -20 && x < this.width + 25) {
             activeCount++;
-            const alpha = Math.sin((x / (this.width + 10)) * Math.PI) * 0.90;
+            const edgeFade = Math.min(1, Math.max(0, (x + 20) / 45)) * Math.min(1, Math.max(0, (this.width + 25 - x) / 45));
+            const alpha = edgeFade * 0.90;
             ctx.save();
             ctx.translate(x, y);
-            ctx.rotate(0.15 + Math.sin(elapsed * 0.002) * 0.1);
+            ctx.rotate(0.15 + Math.sin(elapsed * 0.002 + item.phase) * 0.1);
             if (item.type === 'flower') {
               drawRealFlowerShape(ctx, item.size, alpha);
             } else {
@@ -11434,7 +11668,10 @@ function copyPuritySummary() {
         }
       }
       const ctx = this.ctx;
-      const now = timestamp || performance.now();
+      const now = performance.now();
+      const rawDt = this.lastRenderTime ? (now - this.lastRenderTime) : 16.6667;
+      this.lastRenderTime = now;
+      this.dtScale = Math.min(2.4, Math.max(0.25, rawDt / 16.6667));
 
       ctx.clearRect(0, 0, this.width, this.height);
 
@@ -11482,6 +11719,7 @@ function copyPuritySummary() {
 start() {
       if (this.isRunning) return;
       this.isRunning = true;
+      this.lastRenderTime = performance.now();
       this.handleResize();
       this.animId = requestAnimationFrame(t => this.render(t));
     }

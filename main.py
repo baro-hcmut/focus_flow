@@ -58,7 +58,7 @@ STATE_FOCUS = "FOCUS"
 STATE_BREAK = "BREAK"
 STATE_PAUSED = "PAUSED"
 
-APP_VERSION = "2.1.1"
+APP_VERSION = "2.1.2"
 GITHUB_REPO = "baro-hcmut/focus_flow"
 
 def parse_version_tuple(v_str):
@@ -256,7 +256,11 @@ class PomodoroApp:
         self.window = None
 
         # Productivity Modules (Persisted in config.json)
-        self.checklist = MicroChecklist(self.config.get("checklist_tasks", []))
+        self.checklist = MicroChecklist(
+            self.config.get("checklist_tasks", []),
+            active_index=self.config.get("active_task_index", 0)
+        )
+        self._last_task_save_ts = time.time()
         self.brain_dump = BrainDumpManager(self.config.get("brain_dump_notes", []))
         self.spotlight = None
         self._is_updating = False
@@ -278,6 +282,7 @@ class PomodoroApp:
 
     def _on_window_loaded(self):
         """Initial state push to webview."""
+        self.config["active_task_index"] = self.checklist.active_index
         stats = {
             "completed": self.completed_today,
             "minutes": self.total_focus_min
@@ -432,10 +437,15 @@ class PomodoroApp:
             self.distraction_monitor.barrier_enabled = self.config.get("friction_barrier_enabled", True)
         self.sync_timer_to_js()
 
-    def sync_tasks_to_js(self):
+    def persist_checklist_state(self):
         self.config["checklist_tasks"] = self.checklist.tasks
+        self.config["active_task_index"] = self.checklist.active_index
         save_config(self.config)
-        code = f"window.updateTasks({json.dumps(self.checklist.tasks)});"
+        self._last_task_save_ts = time.time()
+
+    def sync_tasks_to_js(self):
+        self.persist_checklist_state()
+        code = f"window.updateTasks({json.dumps(self.checklist.tasks)}, {int(self.checklist.active_index)});"
         self.eval_js(code)
 
     def sync_parking_to_js(self):
@@ -469,10 +479,15 @@ class PomodoroApp:
 
             if self.state == STATE_FOCUS:
                 self.remaining_seconds -= 1
+                tick_info = self.checklist.tick_active_task(1)
                 self._check_productivity_nudges()
                 if self.remaining_seconds <= 0:
                     self._on_focus_finished()
                 else:
+                    if tick_info:
+                        self.eval_js(f"window.updateTaskTimes && window.updateTaskTimes({json.dumps(tick_info)});")
+                    if time.time() - self._last_task_save_ts >= 15.0:
+                        self.persist_checklist_state()
                     self.sync_timer_to_js()
 
             elif self.state == STATE_BREAK:
@@ -547,6 +562,7 @@ class PomodoroApp:
                 self.prev_state = self.state
                 self.state = STATE_PAUSED
                 self.distraction_monitor.stop_monitoring()
+                self.persist_checklist_state()
                 self.sync_timer_to_js()
             elif self.state == STATE_PAUSED:
                 # Re-use start_timer logic outside lock or inline safely
@@ -564,6 +580,8 @@ class PomodoroApp:
             self.total_target_seconds = self.focus_duration
             self.distraction_monitor.stop_monitoring()
             self.distraction_monitor.reset_current_session()
+            self.checklist.reset_session_times()
+            self.persist_checklist_state()
             self.sync_timer_to_js()
 
     def skip_phase(self):
@@ -632,16 +650,27 @@ class PomodoroApp:
         purity_data = self.distraction_monitor.get_session_purity_stats(max(1, actual_minutes) if actual_minutes > 0 else 1)
 
         if actual_minutes > 0:
-            goal_text = ""
-            for t in self.checklist.tasks:
-                if not t.get("done"):
-                    goal_text = t.get("text", "")
-                    break
-            if not goal_text and self.checklist.tasks:
-                goal_text = self.checklist.tasks[0].get("text", "")
-            self.distraction_monitor.archive_completed_session(self.current_session, actual_minutes, goal_text)
+            session_tasks = self.checklist.get_session_tasks_breakdown()
+            goal_text = session_tasks[0]["text"] if session_tasks else ""
+            if not goal_text:
+                tasks_snap = self.checklist.tasks
+                active_idx = self.checklist.active_index
+                if 0 <= active_idx < len(tasks_snap) and not tasks_snap[active_idx].get("done"):
+                    goal_text = tasks_snap[active_idx].get("text", "")
+                else:
+                    for t in tasks_snap:
+                        if not t.get("done"):
+                            goal_text = t.get("text", "")
+                            break
+                    if not goal_text and tasks_snap:
+                        goal_text = tasks_snap[0].get("text", "")
+            self.distraction_monitor.archive_completed_session(
+                self.current_session, actual_minutes, goal_text, tasks_breakdown=session_tasks
+            )
         else:
             self.distraction_monitor.reset_current_session()
+        self.checklist.reset_session_times()
+        self.persist_checklist_state()
 
         # Show reflection/summary modal
         if self.app_mode == "eyecare":
@@ -984,6 +1013,10 @@ rmdir /s /q "{temp_root}" 2>nul
     def on_close(self):
         self.is_running = False
         try:
+            self.persist_checklist_state()
+        except Exception:
+            pass
+        try:
             self.distraction_monitor.stop_monitoring()
         except Exception:
             pass
@@ -1043,6 +1076,11 @@ class Api:
     def load_tasks_preset(self, preset_name):
         self._app.checklist.load_preset(preset_name)
         self._app.sync_tasks_to_js()
+
+    def set_active_task(self, idx):
+        if self._app.checklist.set_active_task(int(idx)):
+            self._app.persist_checklist_state()
+        return "ok"
 
     def save_quick_dump(self, text):
         self._app.brain_dump.add_note(text, note_type="manual")
@@ -1111,7 +1149,8 @@ class Api:
         return self._app.distraction_monitor.get_analytics_bundle(
             session_num=self._app.current_session,
             is_focus_active=is_active,
-            total_focus_minutes=total_mins
+            total_focus_minutes=total_mins,
+            current_tasks_breakdown=self._app.checklist.get_session_tasks_breakdown()
         )
 
     def set_custom_timer(self, minutes, mode=None):
