@@ -135,7 +135,10 @@ class DistractionMonitor:
         self.current_distracted_hwnd = None
         self.last_distracted_key = None
         self.last_distracted_title = ""
+        self.last_active_hwnd = None
+        self.last_active_proc = ""
         self.last_active_key = ""
+        self.last_active_category = ""
         self.last_active_title = ""
         self._yt_homepage_since = 0.0
         self.last_save_time = time.time()
@@ -533,7 +536,10 @@ class DistractionMonitor:
             with self._data_lock:
                 self.total_tracked_seconds += 1
                 self.session_total_seconds += 1
+                self.last_active_hwnd = hwnd
+                self.last_active_proc = proc_name
                 self.last_active_key = app_key
+                self.last_active_category = category
                 self.last_active_title = clean_title or raw_title
 
                 # Respect explicit manual override only for non-dual-use apps, OR per-key override
@@ -765,16 +771,69 @@ class DistractionMonitor:
             "daily": daily_report
         }
 
+    @staticmethod
+    def _is_display_playback_active() -> bool:
+        """Returns True if Windows reports ES_DISPLAY_REQUIRED (video/meeting playback)."""
+        try:
+            state = ctypes.c_ulong(0)
+            res = ctypes.windll.powrprof.CallNtPowerInformation(16, None, 0, ctypes.byref(state), ctypes.sizeof(state))
+            return res == 0 and bool(state.value & 0x00000002)
+        except Exception:
+            return False
+
+    @staticmethod
+    def _is_window_fullscreen(hwnd) -> bool:
+        """Returns True if hwnd covers its monitor bounds (e.g. fullscreen lecture/slides)."""
+        if not hwnd:
+            return False
+        try:
+            import win32gui, win32api
+            rect = win32gui.GetWindowRect(hwnd)
+            mon = win32api.MonitorFromWindow(hwnd, 2)
+            if not mon:
+                return False
+            mrect = win32api.GetMonitorInfo(mon).get("Monitor")
+            if not mrect:
+                return False
+            return (
+                rect[0] <= mrect[0] + 4
+                and rect[1] <= mrect[1] + 4
+                and rect[2] >= mrect[2] - 4
+                and rect[3] >= mrect[3] - 4
+                and (rect[2] - rect[0]) >= 800
+            )
+        except Exception:
+            return False
+
     def is_passive_media_active(self) -> bool:
-        """Returns True when user appears to be passively watching a lecture/video player."""
+        """Returns True when user appears to be watching a lecture, online class, or fullscreen study media."""
         with self._data_lock:
+            hwnd = self.last_active_hwnd
+            proc = (self.last_active_proc or "").lower()
             key = (self.last_active_key or "").lower()
+            cat = (self.last_active_category or "").lower()
             title = (self.last_active_title or "").lower()
+
+        if cat == "entertainment":
+            return False
         if key == "youtube_study":
             return True
-        passive_hints = ("coursera", "udemy", "edx", "vlc", "mpv", "potplayer", "mpc-hc", "media player")
-        combined = f"{key} {title}"
-        return any(h in combined for h in passive_hints)
+
+        passive_hints = (
+            "meet", "zoom", "teams", "classroom", "coursera", "udemy", "edx",
+            "bkel", "lms", "canvas", "drive.google", "vimeo", "bilibili",
+            "vlc", "mpv", "potplayer", "mpc-hc", "media player",
+            "bài giảng", "bai giang", "lecture", "livestream",
+        )
+        combined = f"{key} {title} {proc}"
+        if any(h in combined for h in passive_hints):
+            return True
+
+        is_own_app = ("focus flow" in title) or ("focus flow" in proc)
+        if not is_own_app and cat in ("deep_work", "online_study"):
+            if self._is_window_fullscreen(hwnd) or self._is_display_playback_active():
+                return True
+        return False
 
     def adjust_idle_seconds(self, ded_seconds: int):
         """Subtracts false AFK seconds from the active session & daily tracked totals."""

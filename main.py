@@ -49,7 +49,8 @@ if os.path.exists(SRC_DIR) and SRC_DIR not in sys.path:
 from sound_manager import play_break_sound, play_focus_sound, ensure_sounds, set_sound_volume
 from system_actions import turn_off_monitor, wake_up_monitor, lock_workstation
 
-IDLE_THRESHOLD_SECONDS = 240  # 4 minutes without mouse/keyboard input
+IDLE_THRESHOLD_SECONDS = 600   # 10 minutes without mouse/keyboard input
+LOCK_IDLE_SECONDS = 15         # Fast pause after 15s on Windows Lock Screen (Win+L)
 
 
 class LASTINPUTINFO(ctypes.Structure):
@@ -71,6 +72,18 @@ def get_windows_idle_seconds() -> int:
     except Exception:
         pass
     return 0
+
+
+def is_windows_desktop_locked() -> bool:
+    """Returns True when Windows workstation is locked (Win+L / secure desktop)."""
+    try:
+        hdesk = ctypes.windll.user32.OpenInputDesktop(0, False, 0x0001)
+        if hdesk:
+            ctypes.windll.user32.CloseDesktop(hdesk)
+            return False
+        return True
+    except Exception:
+        return False
 from config_manager import load_config, save_config
 from distraction_monitor import DistractionMonitor
 from productivity_toolkit import MicroChecklist, BrainDumpManager
@@ -81,7 +94,7 @@ STATE_FOCUS = "FOCUS"
 STATE_BREAK = "BREAK"
 STATE_PAUSED = "PAUSED"
 
-APP_VERSION = "2.2.0"
+APP_VERSION = "2.2.1"
 GITHUB_REPO = "baro-hcmut/focus_flow"
 
 def parse_version_tuple(v_str):
@@ -280,6 +293,7 @@ class PomodoroApp:
         self._idle_modal_shown = False
         self._idle_away_started_ts = 0.0
         self._idle_flagged_pre_sec = 0
+        self._locked_streak_sec = 0
         self.window = None
 
         # Productivity Modules (Persisted in config.json)
@@ -437,8 +451,16 @@ class PomodoroApp:
         code = f"window.updateTimer({self.remaining_seconds}, {self.total_target_seconds}, '{self.state}', {self.current_session}, {self.target_sessions_val}, {json.dumps(stats)}, '{self.app_mode}');"
         self.eval_js(code)
 
+    def _clear_idle_state(self):
+        self._idle_pending = False
+        self._idle_modal_shown = False
+        self._idle_flagged_pre_sec = 0
+        self._locked_streak_sec = 0
+        self.eval_js("window.setIdleMiniStatus && window.setIdleMiniStatus(false);")
+
     def set_app_mode(self, mode="study"):
         self.app_mode = mode # "study" (Học tập & Làm việc) or "eyecare" (Bảo vệ mắt)
+        self._clear_idle_state()
         if mode == "eyecare":
             self.focus_duration = 50 * 60
             self.break_duration = 10 * 60
@@ -454,8 +476,7 @@ class PomodoroApp:
         if mode:
             self.app_mode = "study" if mode == "focus" else mode
         self._reflection_pending = False
-        self._idle_pending = False
-        self._idle_modal_shown = False
+        self._clear_idle_state()
         self.focus_duration = m * 60
         self.remaining_seconds = self.focus_duration
         self.total_target_seconds = self.focus_duration
@@ -513,11 +534,18 @@ class PomodoroApp:
                     self.config.get("idle_detection_enabled", True)
                     and self.app_mode not in ("eyecare", "movie")
                     and not self._idle_pending
-                    and not self.distraction_monitor.is_passive_media_active()
                 ):
-                    idle_sec = get_windows_idle_seconds()
-                    if idle_sec >= IDLE_THRESHOLD_SECONDS:
-                        should_idle_pause = True
+                    if is_windows_desktop_locked():
+                        self._locked_streak_sec += 1
+                        if self._locked_streak_sec >= LOCK_IDLE_SECONDS:
+                            should_idle_pause = True
+                            idle_sec = self._locked_streak_sec
+                    else:
+                        self._locked_streak_sec = 0
+                        if not self.distraction_monitor.is_passive_media_active():
+                            idle_sec = get_windows_idle_seconds()
+                            if idle_sec >= IDLE_THRESHOLD_SECONDS:
+                                should_idle_pause = True
 
                 if should_idle_pause:
                     with self._state_lock:
@@ -527,6 +555,7 @@ class PomodoroApp:
                             self._idle_away_started_ts = time.time() - idle_sec
                             self._idle_pending = True
                             self._idle_modal_shown = False
+                            self._locked_streak_sec = 0
                             self.prev_state = STATE_FOCUS
                             self.state = STATE_PAUSED
                             self.distraction_monitor.stop_monitoring()
@@ -547,7 +576,7 @@ class PomodoroApp:
                         self.sync_timer_to_js()
 
             elif self.state == STATE_PAUSED and self._idle_pending and not self._idle_modal_shown:
-                if get_windows_idle_seconds() < 5:
+                if not is_windows_desktop_locked() and get_windows_idle_seconds() < 5:
                     self._idle_modal_shown = True
                     total_away = max(self._idle_flagged_pre_sec, int(time.time() - self._idle_away_started_ts))
                     if self.is_mini_mode:
@@ -1299,6 +1328,7 @@ class Api:
         # When setting/applying a study cycle, update timer and stand ready at IDLE if not currently on a break
         if self._app.state != STATE_BREAK:
             self._app._reflection_pending = False
+            self._app._clear_idle_state()
             self._app.state = STATE_IDLE
             self._app.remaining_seconds = self._app.focus_duration
             self._app.total_target_seconds = self._app.focus_duration
