@@ -58,7 +58,7 @@ Vào Tab **`Cài Đặt`** ở thanh điều hướng:
 | **Cơ chế ép buộc giờ nghỉ** | Rèm đen (Overlay), Khóa máy (Lock), Tắt màn hình | **Nên chọn `Rèm Đen Phủ Màn Hình`** (che dịu mắt đếm ngược 10 phút, có nút xin gia hạn nếu cần lưu bài). |
 | **Hàng rào trì hoãn 3s** | Bật / Tắt | **NÊN BẬT**: Khựng lại 3s để chặn thói quen lướt web vô thức, có nút "Tôi đang học bài" nếu xem YouTube giảng bài. |
 | **Bảo vệ thị giác 20-20-20** | Bật / Tắt | **NÊN BẬT**: Nhắc nhìn xa 6 mét trong 20s và chớp mắt uống nước khi đến giờ nghỉ. |
-| **Nhắc nhở phút 25 & 48** | Bật / Tắt | **NÊN BẬT**: Phút 25 kiểm tra tiến độ, phút 48 đóng gói và lưu mã nguồn/tài liệu. |
+| **Nhắc nhở phút 25 & 47** | Bật / Tắt | **NÊN BẬT**: Phút 25 kiểm tra tiến độ, trước khi hết ca 3 phút đóng gói và lưu mã nguồn/tài liệu. |
 | **Âm lượng chuông báo** | Thanh trượt 0 - 100% | **Nên đặt 70% - 80%**, bấm nút "Nghe thử" để kiểm tra độ to vừa tai. |
 
 ### 3. Xem phim & Anime không bị chặn (<kbd>F9</kbd>)
@@ -76,7 +76,7 @@ Vào Tab **`Cài Đặt`** ở thanh điều hướng:
 ## 🚀 TẢI VỀ DÙNG NGAY (WINDOWS PORTABLE - KHÔNG CẦN CÀI PYTHON)
 
 1. Vào mục [**Releases**](https://github.com/baro-hcmut/focus_flow/releases).
-2. Tải file cài đặt **`Focus_Flow_v2.1.2_Setup.exe`** (khuyên dùng, 1-click không cần giải nén) hoặc file nén **`Focus_Flow_v2.1.2_Windows.zip`** về máy.
+2. Tải file cài đặt **`Focus_Flow_v2.2.0_Setup.exe`** (khuyên dùng, 1-click không cần giải nén) hoặc file nén **`Focus_Flow_v2.2.0_Windows.zip`** về máy.
 3. Giải nén tệp zip ➔ Nhấp đúp vào **`Chay_Focus_Flow.bat`**:
    - Tự động gỡ bỏ cảnh báo bảo mật Windows.
    - **Tự động tạo biểu tượng Focus Flow siêu nét ngoài Desktop**.

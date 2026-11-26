@@ -25,6 +25,8 @@ DEFAULT_CONFIG = {
     "friction_barrier_enabled": True, # Idea 1: 3-Second Friction Barrier on distractions
     "purity_report_enabled": True,   # Idea 2: Honest Distraction Log & Purity Report
     "spotlight_enabled": False,      # Idea 3: Cinema Dimmer Mode (F9 to toggle)
+    "idle_detection_enabled": True,  # Auto-pause focus timer if user leaves PC unattended
+    "custom_goal_presets": [],
     "completed_sessions": 0,
     "total_focus_minutes": 0
 }

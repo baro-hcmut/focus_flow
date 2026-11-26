@@ -48,6 +48,29 @@ if os.path.exists(SRC_DIR) and SRC_DIR not in sys.path:
 
 from sound_manager import play_break_sound, play_focus_sound, ensure_sounds, set_sound_volume
 from system_actions import turn_off_monitor, wake_up_monitor, lock_workstation
+
+IDLE_THRESHOLD_SECONDS = 240  # 4 minutes without mouse/keyboard input
+
+
+class LASTINPUTINFO(ctypes.Structure):
+    _fields_ = [
+        ("cbSize", ctypes.c_uint),
+        ("dwTime", ctypes.c_uint32),
+    ]
+
+
+def get_windows_idle_seconds() -> int:
+    """Returns seconds since last mouse or keyboard input on Windows."""
+    try:
+        lii = LASTINPUTINFO()
+        lii.cbSize = ctypes.sizeof(LASTINPUTINFO)
+        if ctypes.windll.user32.GetLastInputInfo(ctypes.byref(lii)):
+            now_tick = ctypes.windll.kernel32.GetTickCount() & 0xFFFFFFFF
+            elapsed_ms = (now_tick - (lii.dwTime & 0xFFFFFFFF)) & 0xFFFFFFFF
+            return max(0, int(elapsed_ms // 1000))
+    except Exception:
+        pass
+    return 0
 from config_manager import load_config, save_config
 from distraction_monitor import DistractionMonitor
 from productivity_toolkit import MicroChecklist, BrainDumpManager
@@ -58,7 +81,7 @@ STATE_FOCUS = "FOCUS"
 STATE_BREAK = "BREAK"
 STATE_PAUSED = "PAUSED"
 
-APP_VERSION = "2.1.2"
+APP_VERSION = "2.2.0"
 GITHUB_REPO = "baro-hcmut/focus_flow"
 
 def parse_version_tuple(v_str):
@@ -253,6 +276,10 @@ class PomodoroApp:
         self.is_fullscreen_overlay = False
         self.current_distracted_hwnd = None
         self.app_mode = "study" # "study" (Học tập & Làm việc) or "eyecare" (Bảo vệ mắt)
+        self._idle_pending = False
+        self._idle_modal_shown = False
+        self._idle_away_started_ts = 0.0
+        self._idle_flagged_pre_sec = 0
         self.window = None
 
         # Productivity Modules (Persisted in config.json)
@@ -425,8 +452,10 @@ class PomodoroApp:
     def set_custom_timer(self, minutes, mode=None):
         m = max(1, int(minutes))
         if mode:
-            self.app_mode = mode
+            self.app_mode = "study" if mode == "focus" else mode
         self._reflection_pending = False
+        self._idle_pending = False
+        self._idle_modal_shown = False
         self.focus_duration = m * 60
         self.remaining_seconds = self.focus_duration
         self.total_target_seconds = self.focus_duration
@@ -478,17 +507,52 @@ class PomodoroApp:
                 self.sync_timer_to_js()
 
             if self.state == STATE_FOCUS:
-                self.remaining_seconds -= 1
-                tick_info = self.checklist.tick_active_task(1)
-                self._check_productivity_nudges()
-                if self.remaining_seconds <= 0:
-                    self._on_focus_finished()
+                should_idle_pause = False
+                idle_sec = 0
+                if (
+                    self.config.get("idle_detection_enabled", True)
+                    and self.app_mode not in ("eyecare", "movie")
+                    and not self._idle_pending
+                    and not self.distraction_monitor.is_passive_media_active()
+                ):
+                    idle_sec = get_windows_idle_seconds()
+                    if idle_sec >= IDLE_THRESHOLD_SECONDS:
+                        should_idle_pause = True
+
+                if should_idle_pause:
+                    with self._state_lock:
+                        if self.state == STATE_FOCUS and not self._idle_pending:
+                            studied_sec = max(0, self.total_target_seconds - self.remaining_seconds)
+                            self._idle_flagged_pre_sec = min(idle_sec, studied_sec)
+                            self._idle_away_started_ts = time.time() - idle_sec
+                            self._idle_pending = True
+                            self._idle_modal_shown = False
+                            self.prev_state = STATE_FOCUS
+                            self.state = STATE_PAUSED
+                            self.distraction_monitor.stop_monitoring()
+                            self.persist_checklist_state()
+                            self.sync_timer_to_js()
+                            self.eval_js("window.setIdleMiniStatus && window.setIdleMiniStatus(true);")
                 else:
-                    if tick_info:
-                        self.eval_js(f"window.updateTaskTimes && window.updateTaskTimes({json.dumps(tick_info)});")
-                    if time.time() - self._last_task_save_ts >= 15.0:
-                        self.persist_checklist_state()
-                    self.sync_timer_to_js()
+                    self.remaining_seconds -= 1
+                    tick_info = self.checklist.tick_active_task(1)
+                    self._check_productivity_nudges()
+                    if self.remaining_seconds <= 0:
+                        self._on_focus_finished()
+                    else:
+                        if tick_info:
+                            self.eval_js(f"window.updateTaskTimes && window.updateTaskTimes({json.dumps(tick_info)});")
+                        if time.time() - self._last_task_save_ts >= 15.0:
+                            self.persist_checklist_state()
+                        self.sync_timer_to_js()
+
+            elif self.state == STATE_PAUSED and self._idle_pending and not self._idle_modal_shown:
+                if get_windows_idle_seconds() < 5:
+                    self._idle_modal_shown = True
+                    total_away = max(self._idle_flagged_pre_sec, int(time.time() - self._idle_away_started_ts))
+                    if self.is_mini_mode:
+                        self.restore_full_window()
+                    self.eval_js(f"window.showIdleReturnModal && window.showIdleReturnModal({int(total_away)}, {int(self._idle_flagged_pre_sec)});")
 
             elif self.state == STATE_BREAK:
                 self.remaining_seconds -= 1
@@ -540,6 +604,8 @@ class PomodoroApp:
     def start_timer(self):
         with self._state_lock:
             self._reflection_pending = False
+            self._idle_pending = False
+            self._idle_modal_shown = False
             if self.state == STATE_IDLE:
                 self.state = STATE_FOCUS
                 self.remaining_seconds = self.focus_duration
@@ -565,7 +631,8 @@ class PomodoroApp:
                 self.persist_checklist_state()
                 self.sync_timer_to_js()
             elif self.state == STATE_PAUSED:
-                # Re-use start_timer logic outside lock or inline safely
+                self._idle_pending = False
+                self._idle_modal_shown = False
                 self.state = self.prev_state if self.prev_state != STATE_IDLE else STATE_FOCUS
                 if self.state == STATE_FOCUS:
                     self.distraction_monitor.start_monitoring()
@@ -574,6 +641,8 @@ class PomodoroApp:
     def reset_timer(self):
         with self._state_lock:
             self._reflection_pending = False
+            self._idle_pending = False
+            self._idle_modal_shown = False
             self.state = STATE_IDLE
             self.prev_state = STATE_IDLE
             self.remaining_seconds = self.focus_duration
@@ -613,6 +682,8 @@ class PomodoroApp:
             if self._reflection_pending or self.state not in (STATE_FOCUS, STATE_PAUSED):
                 return
             self._reflection_pending = True
+            self._idle_pending = False
+            self._idle_modal_shown = False
             self.state = STATE_PAUSED
             self.prev_state = STATE_IDLE
 
@@ -1010,6 +1081,29 @@ rmdir /s /q "{temp_root}" 2>nul
             err_msg = str(e).replace("'", "\\'").replace('"', '\\"').replace('\n', ' ')
             self.eval_js(f"window.onUpdateError && window.onUpdateError('{err_msg}');")
 
+    def resolve_idle_return(self, action="keep"):
+        with self._state_lock:
+            ded = max(0, int(self._idle_flagged_pre_sec or 0))
+            if action == "deduct" and ded > 0:
+                self.remaining_seconds = min(self.total_target_seconds, self.remaining_seconds + ded)
+                tick_info = self.checklist.deduct_active_time(ded)
+                self.distraction_monitor.adjust_idle_seconds(ded)
+                self.persist_checklist_state()
+                if tick_info:
+                    self.eval_js(f"window.updateTaskTimes && window.updateTaskTimes({json.dumps(tick_info)});")
+
+            self._idle_pending = False
+            self._idle_modal_shown = False
+            self._idle_flagged_pre_sec = 0
+            self.eval_js("window.setIdleMiniStatus && window.setIdleMiniStatus(false);")
+
+            if action in ("keep", "deduct"):
+                self.state = STATE_FOCUS
+                self.distraction_monitor.start_monitoring()
+            else:
+                self.state = STATE_PAUSED
+            self.sync_timer_to_js()
+
     def on_close(self):
         self.is_running = False
         try:
@@ -1080,6 +1174,43 @@ class Api:
     def set_active_task(self, idx):
         if self._app.checklist.set_active_task(int(idx)):
             self._app.persist_checklist_state()
+        return "ok"
+
+    def save_custom_goal_preset(self, name):
+        clean_name = str(name or "").strip()
+        task_texts = [t["text"] for t in self._app.checklist.tasks if str(t.get("text", "")).strip()]
+        if not clean_name or not task_texts:
+            return self._app.config.get("custom_goal_presets", [])
+        presets = list(self._app.config.get("custom_goal_presets", []))
+        presets = [p for p in presets if p.get("name") != clean_name]
+        presets.insert(0, {"name": clean_name, "tasks": task_texts})
+        self._app.config["custom_goal_presets"] = presets[:12]
+        save_config(self._app.config)
+        return self._app.config["custom_goal_presets"]
+
+    def delete_custom_goal_preset(self, idx):
+        presets = list(self._app.config.get("custom_goal_presets", []))
+        i = int(idx)
+        if 0 <= i < len(presets):
+            presets.pop(i)
+            self._app.config["custom_goal_presets"] = presets
+            save_config(self._app.config)
+        return presets
+
+    def apply_custom_goal_preset(self, idx):
+        presets = self._app.config.get("custom_goal_presets", [])
+        i = int(idx)
+        if 0 <= i < len(presets):
+            self._app.checklist.load_custom_tasks(presets[i].get("tasks", []))
+            self._app.sync_tasks_to_js()
+            return "ok"
+        return "not_found"
+
+    def get_date_analytics(self, date_key):
+        return self._app.distraction_monitor.get_date_report(str(date_key))
+
+    def resolve_idle_return(self, action="keep"):
+        self._app.resolve_idle_return(str(action or "keep"))
         return "ok"
 
     def save_quick_dump(self, text):

@@ -135,6 +135,8 @@ class DistractionMonitor:
         self.current_distracted_hwnd = None
         self.last_distracted_key = None
         self.last_distracted_title = ""
+        self.last_active_key = ""
+        self.last_active_title = ""
         self._yt_homepage_since = 0.0
         self.last_save_time = time.time()
         self.current_date = time.strftime("%Y-%m-%d")
@@ -531,6 +533,8 @@ class DistractionMonitor:
             with self._data_lock:
                 self.total_tracked_seconds += 1
                 self.session_total_seconds += 1
+                self.last_active_key = app_key
+                self.last_active_title = clean_title or raw_title
 
                 # Respect explicit manual override only for non-dual-use apps, OR per-key override
                 if app_key in self.usage_records and self.usage_records[app_key].get("manual"):
@@ -760,3 +764,80 @@ class DistractionMonitor:
             "sessions": sessions_copy,
             "daily": daily_report
         }
+
+    def is_passive_media_active(self) -> bool:
+        """Returns True when user appears to be passively watching a lecture/video player."""
+        with self._data_lock:
+            key = (self.last_active_key or "").lower()
+            title = (self.last_active_title or "").lower()
+        if key == "youtube_study":
+            return True
+        passive_hints = ("coursera", "udemy", "edx", "vlc", "mpv", "potplayer", "mpc-hc", "media player")
+        combined = f"{key} {title}"
+        return any(h in combined for h in passive_hints)
+
+    def adjust_idle_seconds(self, ded_seconds: int):
+        """Subtracts false AFK seconds from the active session & daily tracked totals."""
+        rem = max(0, int(ded_seconds or 0))
+        if rem <= 0:
+            return
+        with self._data_lock:
+            self.session_total_seconds = max(0, self.session_total_seconds - rem)
+            self.total_tracked_seconds = max(0, self.total_tracked_seconds - rem)
+            key = self.last_active_key
+            if key:
+                for store in (self.session_records, self.usage_records):
+                    if key in store:
+                        store[key]["seconds"] = max(0, int(store[key].get("seconds", 0)) - rem)
+        self.save_daily_stats()
+
+    def get_date_report(self, date_key: str):
+        """Returns daily purity & goal breakdown for any saved date YYYY-MM-DD."""
+        key = str(date_key or "").strip()
+        if not key or key == (self.current_date or time.strftime("%Y-%m-%d")):
+            bundle = self.get_analytics_bundle()
+            daily = dict(bundle["daily"])
+            daily["date"] = key or self.current_date
+            daily["sessions_count"] = len(bundle["sessions"])
+            daily["sessions"] = bundle["sessions"]
+            daily["is_today"] = True
+            return daily
+
+        try:
+            from config_manager import load_config
+            cfg = load_config()
+            usage = cfg.get("daily_usage", {}).get(key, {}) or {}
+            hist = cfg.get("daily_history", {}).get(key, {}) or {}
+        except Exception:
+            usage = {}
+            hist = {}
+
+        raw_records = dict(usage.get("records", {}) or {})
+        records = self._migrate_legacy_records(raw_records)
+        tracked = int(usage.get("total_seconds", sum(r.get("seconds", 0) for r in records.values())) or 0)
+        events = list(usage.get("events", []) or [])
+        sessions_detail = list(usage.get("sessions_detail", []) or [])
+        hist_mins = int(hist.get("minutes", 0) or 0)
+        report = self._build_purity_report(
+            list(records.items()), tracked, events, fallback_logged_sec=hist_mins * 60
+        )
+
+        goal_map = {}
+        for sess in sessions_detail:
+            for t in sess.get("tasks_breakdown", []):
+                txt = str(t.get("text", "")).strip()
+                sec = max(0, int(t.get("seconds", 0) or 0))
+                if txt and sec > 0:
+                    entry = goal_map.setdefault(txt, {"text": txt, "seconds": 0, "done": False})
+                    entry["seconds"] += sec
+                    if t.get("done"):
+                        entry["done"] = True
+
+        report["tasks_breakdown"] = sorted(
+            goal_map.values(), key=lambda x: x["seconds"], reverse=True
+        )
+        report["date"] = key
+        report["sessions_count"] = len(sessions_detail) if sessions_detail else int(hist.get("sessions", 0) or 0)
+        report["sessions"] = sessions_detail
+        report["is_today"] = False
+        return report

@@ -159,6 +159,36 @@ class MicroChecklist:
         with self._lock:
             self.session_task_times = {}
 
+    def deduct_active_time(self, seconds):
+        """Subtracts AFK idle seconds from active task & session accumulator, clamped >= 0."""
+        dec = max(0, int(seconds or 0))
+        if dec <= 0:
+            return None
+        with self._lock:
+            if not self.current_tasks:
+                return None
+            idx = self.active_index if 0 <= self.active_index < len(self.current_tasks) else 0
+            task = self.current_tasks[idx]
+            task["spent_seconds"] = max(0, int(task.get("spent_seconds", 0)) - dec)
+            t_text = task["text"]
+            if t_text in self.session_task_times:
+                self.session_task_times[t_text] = max(0, int(self.session_task_times[t_text]) - dec)
+            return {
+                "active_index": idx,
+                "times": [t["spent_seconds"] for t in self.current_tasks],
+            }
+
+    def load_custom_tasks(self, task_texts):
+        """Replaces current checklist with a user-saved preset list of task strings."""
+        with self._lock:
+            cleaned = [str(t or "").strip() for t in (task_texts or []) if str(t or "").strip()]
+            self.current_tasks = [
+                {"text": t, "done": False, "spent_seconds": 0}
+                for t in cleaned
+            ]
+            self.active_index = 0
+            return self.tasks
+
     def clear_all(self):
         with self._lock:
             self.current_tasks = []

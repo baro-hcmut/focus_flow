@@ -899,6 +899,21 @@
       height: 100%;
       justify-content: flex-end;
       gap: 4px;
+      cursor: pointer;
+    }
+
+    .weekly-bar-col:hover .weekly-bar-pill {
+      filter: brightness(1.15);
+    }
+
+    .weekly-bar-col.selected .weekly-bar-pill {
+      outline: 1.5px solid #f8fafc;
+      outline-offset: 1px;
+    }
+
+    .weekly-bar-col.selected .weekly-bar-day {
+      color: #f8fafc;
+      font-weight: 700;
     }
 
     .weekly-bar-pill {
@@ -5597,7 +5612,7 @@ body[data-fx="pixel"] .ambient-pill.active {
       </div>
       <span class="brand-title">Focus Flow</span>
       <div class="status-dot" id="headerStatusDot"></div>
-      <span class="badge-app-edition" id="titlebarVersionBadge">v2.1.2</span>
+      <span class="badge-app-edition" id="titlebarVersionBadge">v2.2.0</span>
       <button class="titlebar-update-btn" id="btnTitlebarUpdate" style="display:none;" onclick="openUpdateModal()" title="Nhấp để xem bản cập nhật mới!">
         <span class="update-dot-ping"></span>
         <span id="titlebarUpdateText">Cập nhật v1.1</span>
@@ -5801,6 +5816,10 @@ body[data-fx="pixel"] .ambient-pill.active {
           </div>
           <div class="checklist-actions-right">
             <span class="checklist-counter" id="checklistProgressText">0/0 hoàn thành</span>
+            <button class="btn-clear-tasks" id="btnGoalPresets" onclick="openGoalPresetsModal()" title="Chọn hoặc lưu mẫu mục tiêu hay dùng">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="14" y2="13"/></svg>
+              <span>Mẫu</span>
+            </button>
             <button class="btn-clear-tasks" id="btnClearTasksList" onclick="clearAllTasks()" title="Xóa tất cả mục tiêu" style="display:none;">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
               <span>Xóa hết</span>
@@ -6090,10 +6109,20 @@ body[data-fx="pixel"] .ambient-pill.active {
 
           <div class="settings-item-row">
             <div>
-              <div class="settings-label-title">Nhắc Nhở Kết Thúc Ca (Trước 2 phút)</div>
-              <div class="settings-label-desc">Báo trước 2 phút để lưu lại công việc và chuẩn bị nghỉ ngơi</div>
+              <div class="settings-label-title">Nhắc Nhở Kết Thúc Ca (Trước 3 phút)</div>
+              <div class="settings-label-desc">Báo trước 3 phút để lưu lại công việc và chuẩn bị nghỉ ngơi</div>
             </div>
             <div class="switch-toggle on" id="toggle-wrapup_nudge_enabled" onclick="toggleSetting('wrapup_nudge_enabled')">
+              <div class="switch-knob"></div>
+            </div>
+          </div>
+
+          <div class="settings-item-row">
+            <div>
+              <div class="settings-label-title">Tự Tạm Dừng Khi Rời Máy (AFK)</div>
+              <div class="settings-label-desc">Tạm dừng sau 4 phút không thao tác chuột/phím (trừ lúc xem bài giảng)</div>
+            </div>
+            <div class="switch-toggle on" id="toggle-idle_detection_enabled" onclick="toggleSetting('idle_detection_enabled')">
               <div class="switch-knob"></div>
             </div>
           </div>
@@ -6137,7 +6166,7 @@ body[data-fx="pixel"] .ambient-pill.active {
             <div>
               <div class="settings-label-title" style="display:flex; align-items:center; gap:8px;">
                 <span>Focus Flow • Pomodoro 50/10 Pro</span>
-                <span class="badge-app-edition" id="settingsVersionLabel">v2.1.2</span>
+                <span class="badge-app-edition" id="settingsVersionLabel">v2.2.0</span>
                 <span class="badge-update-alert" id="settingsUpdateAlertBadge" style="display:none; cursor:pointer;" onclick="openUpdateModal()">✨ Có bản mới</span>
               </div>
               <div class="settings-label-desc" id="settingsUpdateStatusText">Tự động kiểm tra bản cập nhật mới từ GitHub Releases</div>
@@ -6408,6 +6437,45 @@ body[data-fx="pixel"] .ambient-pill.active {
     </div>
   </div>
 
+  <!-- MODAL: PERSONAL GOAL PRESETS -->
+  <div class="modal-backdrop" id="goalPresetsModal" onmousedown="if(event.target===this) closeGoalPresetsModal()">
+    <div class="modal-card" style="max-width:410px; border-radius:12px; background:var(--bg-card, #121620); border:1px solid rgba(255,255,255,0.1);">
+      <div class="modal-header-row" style="margin-bottom:10px;">
+        <div class="modal-title" style="font-size:13.5px;">Mẫu Mục Tiêu Hay Dùng</div>
+        <button class="btn-close-modal" onclick="closeGoalPresetsModal()">✕</button>
+      </div>
+      <div style="font-size:11px; color:#94a3b8; margin-bottom:6px; font-weight:600;">Mẫu có sẵn</div>
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
+        <button class="btn-hero-ghost" style="height:28px; padding:0 10px; font-size:11px;" onclick="applyBuiltInPreset('study')">Ôn thi / Học bài</button>
+        <button class="btn-hero-ghost" style="height:28px; padding:0 10px; font-size:11px;" onclick="applyBuiltInPreset('dev')">Lập trình / Đồ án</button>
+        <button class="btn-hero-ghost" style="height:28px; padding:0 10px; font-size:11px;" onclick="applyBuiltInPreset('writing')">Viết báo cáo</button>
+      </div>
+      <div style="font-size:11px; color:#94a3b8; margin-bottom:6px; font-weight:600;">Mẫu cá nhân đã lưu</div>
+      <div id="customGoalPresetsList" style="display:flex; flex-direction:column; gap:6px; max-height:150px; overflow-y:auto; margin-bottom:12px;"></div>
+      <div style="display:flex; gap:6px; border-top:1px solid rgba(255,255,255,0.08); padding-top:10px;">
+        <input type="text" id="newGoalPresetNameInput" placeholder="Tên mẫu mới (vd: Ôn Giải tích)..." style="flex:1; height:30px; background:rgba(0,0,0,0.28); border:1px solid rgba(255,255,255,0.12); border-radius:6px; padding:0 10px; color:#f8fafc; font-size:11.5px; outline:none;" onkeydown="if(event.key==='Enter'){event.preventDefault(); saveGoalPresetFromInput();}">
+        <button class="btn-hero-primary" style="height:30px; padding:0 12px; font-size:11px; flex-shrink:0;" onclick="saveGoalPresetFromInput()">Lưu danh sách</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: IDLE / AFK RETURN CHOICE -->
+  <div class="modal-backdrop" id="idleReturnModal">
+    <div class="modal-card" style="max-width:400px; border-radius:12px; background:var(--bg-card, #121620); border:1px solid rgba(255,255,255,0.12);">
+      <div class="modal-header-row" style="margin-bottom:8px;">
+        <div class="modal-title" style="font-size:14px;">Bạn vừa tạm rời máy</div>
+      </div>
+      <div id="idleReturnSummaryText" style="font-size:12px; color:#cbd5e1; line-height:1.5; margin-bottom:14px;">
+        Ứng dụng đã tự tạm dừng do không thấy thao tác chuột/phím. Bạn muốn xử lý khoảng thời gian vừa rồi như thế nào?
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <button class="btn-hero-primary" id="btnIdleDeductResume" style="height:34px; font-size:12px;" onclick="resolveIdleChoice('deduct')">Trừ khoảng rời máy & Tiếp tục</button>
+        <button class="btn-hero-ghost" style="height:34px; font-size:12px;" onclick="resolveIdleChoice('keep')">Giữ nguyên (vừa đọc tài liệu) & Tiếp tục</button>
+        <button class="btn-hero-ghost" style="height:30px; font-size:11px; border:none; color:#94a3b8;" onclick="resolveIdleChoice('stay_paused')">Vẫn để tạm dừng</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL 3: MOVIE FINISHED MODAL -->
   <div class="modal-backdrop" id="movieFinishedModal">
     <div class="modal-card" style="text-align:center; align-items:center;">
@@ -6448,7 +6516,7 @@ body[data-fx="pixel"] .ambient-pill.active {
         <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255, 255, 255, 0.03); border:1px solid rgba(255, 255, 255, 0.06); padding:8px 12px; border-radius:8px; font-size:12px;">
           <div style="display:flex; align-items:center; gap:6px;">
             <span style="color:#94a3b8;">Phiên bản mới:</span>
-            <span id="updateModalNewVer" style="font-weight:600; color:#38bdf8;">v2.1.2</span>
+            <span id="updateModalNewVer" style="font-weight:600; color:#38bdf8;">v2.2.0</span>
           </div>
           <div style="display:flex; align-items:center; gap:6px; font-size:11.5px; color:#64748b;">
             <span>Đang dùng:</span>
@@ -6777,6 +6845,7 @@ body[data-fx="pixel"] .ambient-pill.active {
       if (e.key === "Escape") {
         closeThemeModal();
         closeCustomTimerModal();
+        closeGoalPresetsModal();
         closePurityReportModal();
         closeMovieFinishedModal();
         if (typeof closeUpdateModal === "function") closeUpdateModal();
@@ -7358,7 +7427,35 @@ body[data-fx="pixel"] .ambient-pill.active {
       }
     }
 
-function copyPuritySummary() {
+    function buildPuritySummaryText(data) {
+      if (!data) return "";
+      let scopeLabel = "Ca hiện tại";
+      if (analyticsScope === "sessions" && selectedSessionNum !== null) {
+        scopeLabel = `Ca ${selectedSessionNum}`;
+      } else if (analyticsScope === "daily") {
+        scopeLabel = (selectedHistoryDate && data.date) ? `Ngày ${data.date}` : "Tổng hôm nay";
+      }
+
+      const lines = [
+        `BÁO CÁO NĂNG SUẤT FOCUS FLOW (${scopeLabel}):`,
+        `• Độ tinh khiết: ${data.purity_percent !== undefined ? data.purity_percent : 100}%`,
+        `• Học tập sâu: ${data.deep_work_str || "0 giây"}`,
+        `• Học trực tuyến: ${data.online_study_str || "0 giây"}`,
+        `• Xao nhãng: ${data.distracted_str || "0 giây"}`
+      ];
+
+      const goals = Array.isArray(data.tasks_breakdown) ? data.tasks_breakdown : [];
+      if (goals.length > 0) {
+        lines.push("", "MỤC TIÊU THỰC HIỆN:");
+        goals.forEach(g => {
+          const status = g.done ? " [Xong]" : "";
+          lines.push(`• ${g.text}${status}: ${formatCompactHms(g.seconds)}`);
+        });
+      }
+      return lines.join("\n");
+    }
+
+    function copyPuritySummary() {
       if (!cachedPurityData) {
         pyCall("get_purity_report").then(data => {
           cachedPurityData = data;
@@ -7366,11 +7463,7 @@ function copyPuritySummary() {
         });
         return;
       }
-      const text = `BÁO CÁO NĂNG SUẤT FOCUS FLOW:
-• Độ tinh khiết: ${cachedPurityData.purity_percent || 100}%
-• Học tập sâu: ${cachedPurityData.deep_work_str || "0s"}
-• Học trực tuyến: ${cachedPurityData.online_study_str || "0s"}
-• Xao nhãng: ${cachedPurityData.distracted_str || "0s"}`;
+      const text = buildPuritySummaryText(cachedPurityData);
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(text).then(() => {
@@ -7503,17 +7596,54 @@ function copyPuritySummary() {
     let analyticsBundle = null;
     let analyticsScope = "current"; // "current" | "sessions" | "daily"
     let selectedSessionNum = null;
+    let selectedHistoryDate = null; // null = today, or "YYYY-MM-DD"
+    let historyDateReport = null;
+    let lastWeeklyHistory = {};
     let breakdownFilter = "all"; // "all" | "study" | "distraction"
     let expandedGroups = { distraction: false, study: false, filtered: false, goals: false };
 
+    function getLocalTodayKey() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, "0");
+      const d = String(now.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
     function setAnalyticsScope(scope) {
       analyticsScope = scope;
+      if (scope !== "daily") {
+        selectedHistoryDate = null;
+        historyDateReport = null;
+      }
       ["current", "sessions", "daily"].forEach(s => {
         const btn = document.getElementById(`scopeBtn${s.charAt(0).toUpperCase() + s.slice(1)}`);
         if (btn) btn.classList.toggle("active", s === scope);
       });
       expandedGroups = { distraction: false, study: false, filtered: false, goals: false };
+      renderWeeklyHistory(lastWeeklyHistory);
       renderAnalyticsView();
+    }
+
+    function selectHistoryDate(dateKey) {
+      const todayKey = getLocalTodayKey();
+      if (!dateKey || dateKey === todayKey || dateKey === selectedHistoryDate) {
+        selectedHistoryDate = null;
+        historyDateReport = null;
+        renderWeeklyHistory(lastWeeklyHistory);
+        renderAnalyticsView();
+        return;
+      }
+      selectedHistoryDate = dateKey;
+      historyDateReport = null;
+      expandedGroups = { distraction: false, study: false, filtered: false, goals: false };
+      renderWeeklyHistory(lastWeeklyHistory);
+      pyCall("get_date_analytics", dateKey).then(rep => {
+        if (rep && selectedHistoryDate === dateKey) {
+          historyDateReport = rep;
+          renderAnalyticsView();
+        }
+      });
     }
 
     function selectAnalyticsSession(sessNum) {
@@ -7622,16 +7752,25 @@ function copyPuritySummary() {
           }
         }
       } else {
-        activeData = daily;
+        const isPastDay = !!(selectedHistoryDate && historyDateReport);
+        activeData = isPastDay ? historyDateReport : daily;
         if (ctxStrip) ctxStrip.style.display = "flex";
-        if (ctxLeft) ctxLeft.innerText = `Tổng hợp hôm nay • ${sessions.length} ca đã hoàn thành`;
-        if (ctxRight) ctxRight.innerText = daily.total_tracked_seconds ? `Tổng theo dõi: ${daily.total_tracked_str}` : "";
+        if (isPastDay) {
+          const cnt = historyDateReport.sessions_count || 0;
+          if (ctxLeft) ctxLeft.innerText = `Ngày ${selectedHistoryDate} • ${cnt} ca đã hoàn thành`;
+          if (ctxRight) {
+            ctxRight.innerHTML = `<button onclick="selectHistoryDate(null)" style="background:none;border:none;color:#38bdf8;font-size:10.5px;font-weight:600;cursor:pointer;padding:0;">← Xem hôm nay</button>`;
+          }
+        } else {
+          if (ctxLeft) ctxLeft.innerText = `Tổng hợp hôm nay • ${sessions.length} ca đã hoàn thành`;
+          if (ctxRight) ctxRight.innerText = daily.total_tracked_seconds ? `Tổng theo dõi: ${daily.total_tracked_str}` : "";
+        }
       }
 
-      renderAnalyticsContent(activeData);
+      renderAnalyticsContent(activeData, !!(analyticsScope === "daily" && selectedHistoryDate && historyDateReport));
     }
 
-    function createBreakdownRow(item) {
+    function createBreakdownRow(item, readOnly = false) {
       const row = document.createElement("div");
       row.className = "app-breakdown-row";
 
@@ -7652,7 +7791,7 @@ function copyPuritySummary() {
           </span>
           <div style="display:flex; align-items:center; gap:7px; flex-shrink:0;">
             <span class="app-duration-tag">${item.time_str} · ${item.percent}%</span>
-            <span class="tag-btn-reclassify ${tagClass}" title="Đổi phân loại: Học bài / Xao nhãng">${tagLabel} ⇄</span>
+            <span class="tag-btn-reclassify ${tagClass}" style="${readOnly ? 'cursor:default; opacity:0.85;' : ''}" title="${readOnly ? 'Dữ liệu lịch sử ngày trước' : 'Đổi phân loại: Học bài / Xao nhãng'}">${tagLabel}${readOnly ? '' : ' ⇄'}</span>
           </div>
         </div>
         <div class="app-bar-track">
@@ -7660,7 +7799,7 @@ function copyPuritySummary() {
         </div>
       `;
       const reclassifyBtn = row.querySelector(".tag-btn-reclassify");
-      if (reclassifyBtn) {
+      if (reclassifyBtn && !readOnly) {
         reclassifyBtn.onclick = () => toggleAppCategory(item.key, item.category);
       }
       return row;
@@ -7739,7 +7878,7 @@ function copyPuritySummary() {
       }
     }
 
-    function renderAnalyticsContent(data) {
+    function renderAnalyticsContent(data, readOnly = false) {
       if (!data) return;
       cachedPurityData = data;
 
@@ -7791,7 +7930,7 @@ function copyPuritySummary() {
 
         const isExpanded = !!expandedGroups[groupKey];
         const visible = isExpanded ? groupItems : groupItems.slice(0, defaultLimit);
-        visible.forEach(item => listEl.appendChild(createBreakdownRow(item)));
+        visible.forEach(item => listEl.appendChild(createBreakdownRow(item, readOnly)));
 
         const hiddenCount = groupItems.length - defaultLimit;
         if (hiddenCount > 0) {
@@ -8188,7 +8327,7 @@ function copyPuritySummary() {
           }
         } else if (state === "PAUSED") {
           if (miniDot) miniDot.style.background = "#f59e0b";
-          if (miniText) miniText.innerText = `Tạm dừng · Ca ${session}`;
+          if (miniText) miniText.innerText = window.idlePausedFlag ? `Tạm nghỉ · Rời máy` : `Tạm dừng · Ca ${session}`;
           if (miniFill) miniFill.style.background = "#f59e0b";
           if (miniPlayIcon) {
             miniPlayIcon.innerHTML = `<polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/>`;
@@ -8616,12 +8755,126 @@ function copyPuritySummary() {
       showToast("Đang phát thử chuông thông báo...");
     }
 
+    let customGoalPresets = [];
+    window.idlePausedFlag = false;
+
+    window.setIdleMiniStatus = function(isIdle) {
+      window.idlePausedFlag = !!isIdle;
+      const miniText = document.getElementById("miniStatusText");
+      if (miniText && (appState === "PAUSED" || isIdle)) {
+        miniText.innerText = window.idlePausedFlag ? "Tạm nghỉ · Rời máy" : `Tạm dừng · Ca ${currentSession}`;
+      }
+    };
+
+    window.showIdleReturnModal = function(totalAwaySec, flaggedPreSec) {
+      const modal = document.getElementById("idleReturnModal");
+      if (!modal) return;
+      const awayMin = Math.max(1, Math.round((totalAwaySec || 0) / 60));
+      const dedMin = Math.max(1, Math.round((flaggedPreSec || 0) / 60));
+      const sumEl = document.getElementById("idleReturnSummaryText");
+      const dedBtn = document.getElementById("btnIdleDeductResume");
+      if (sumEl) {
+        sumEl.innerText = `Bạn vừa tạm rời máy khoảng ${awayMin} phút. Có ${dedMin} phút trước lúc tự tạm dừng đang được tính vào ca học & mục tiêu trọng tâm.`;
+      }
+      if (dedBtn) {
+        dedBtn.innerText = `Trừ ${dedMin} phút vừa rồi & Tiếp tục`;
+      }
+      modal.classList.add("active");
+    };
+
+    function resolveIdleChoice(action) {
+      const modal = document.getElementById("idleReturnModal");
+      if (modal) modal.classList.remove("active");
+      window.idlePausedFlag = false;
+      pyCall("resolve_idle_return", action || "keep");
+    }
+
+    function openGoalPresetsModal() {
+      renderCustomGoalPresets();
+      const modal = document.getElementById("goalPresetsModal");
+      if (modal) modal.classList.add("active");
+    }
+
+    function closeGoalPresetsModal() {
+      const modal = document.getElementById("goalPresetsModal");
+      if (modal) modal.classList.remove("active");
+    }
+
+    function renderCustomGoalPresets() {
+      const box = document.getElementById("customGoalPresetsList");
+      if (!box) return;
+      box.innerHTML = "";
+      if (!customGoalPresets || customGoalPresets.length === 0) {
+        box.innerHTML = `<div style="font-size:11px; color:#64748b; padding:6px 4px;">Chưa có mẫu cá nhân nào. Nhập tên bên dưới để lưu danh sách mục tiêu hiện tại.</div>`;
+        return;
+      }
+      customGoalPresets.forEach((p, idx) => {
+        const row = document.createElement("div");
+        row.style.cssText = "display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 10px; border-radius:7px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07);";
+        const count = Array.isArray(p.tasks) ? p.tasks.length : 0;
+        row.innerHTML = `
+          <div style="flex:1; min-width:0; cursor:pointer;" title="Bấm để áp dụng mẫu này">
+            <div style="font-size:12px; font-weight:600; color:#e2e8f0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeUpdateHtml(p.name || "")}</div>
+            <div style="font-size:10px; color:#94a3b8;">${count} mục tiêu</div>
+          </div>
+          <button class="btn-hero-ghost" style="height:24px; padding:0 8px; font-size:10.5px;">Dùng</button>
+          <button style="background:none; border:none; color:#94a3b8; cursor:pointer; font-size:12px; padding:2px 4px;" title="Xóa mẫu này">✕</button>
+        `;
+        const btns = row.querySelectorAll("button");
+        row.firstElementChild.onclick = () => applyCustomPreset(idx);
+        btns[0].onclick = () => applyCustomPreset(idx);
+        btns[1].onclick = () => deleteCustomPreset(idx);
+        box.appendChild(row);
+      });
+    }
+
+    function applyBuiltInPreset(name) {
+      pyCall("load_tasks_preset", name);
+      closeGoalPresetsModal();
+    }
+
+    function applyCustomPreset(idx) {
+      pyCall("apply_custom_goal_preset", idx);
+      closeGoalPresetsModal();
+    }
+
+    function deleteCustomPreset(idx) {
+      pyCall("delete_custom_goal_preset", idx).then(res => {
+        if (Array.isArray(res)) {
+          customGoalPresets = res;
+          renderCustomGoalPresets();
+        }
+      });
+    }
+
+    function saveGoalPresetFromInput() {
+      const inp = document.getElementById("newGoalPresetNameInput");
+      const name = (inp ? inp.value : "").trim();
+      if (!name) {
+        showToast("Hãy nhập tên cho mẫu mục tiêu.");
+        return;
+      }
+      if (!tasks || tasks.length === 0) {
+        showToast("Danh sách mục tiêu hiện đang trống.");
+        return;
+      }
+      pyCall("save_custom_goal_preset", name).then(res => {
+        if (Array.isArray(res)) {
+          customGoalPresets = res;
+          if (inp) inp.value = "";
+          renderCustomGoalPresets();
+          showToast(`✓ Đã lưu mẫu "${name}"`);
+        }
+      });
+    }
+
     function renderWeeklyHistory(history) {
+      lastWeeklyHistory = history || lastWeeklyHistory || {};
       const container = document.getElementById("weeklyBarsContainer");
       if (!container) return;
       container.innerHTML = "";
 
-      const historyData = history || {};
+      const historyData = lastWeeklyHistory;
       const dayNames = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
       const now = new Date();
       let totalWeekMins = 0;
@@ -8651,8 +8904,10 @@ function copyPuritySummary() {
 
       days.forEach(d => {
         const col = document.createElement("div");
-        col.className = "weekly-bar-col";
-        col.title = `${d.key} (${d.dayLabel}): ${d.minutes} phút • ${d.sessions} ca học`;
+        const isSelected = selectedHistoryDate ? (selectedHistoryDate === d.key) : d.isToday;
+        col.className = `weekly-bar-col ${isSelected ? 'selected' : ''}`;
+        col.title = `${d.key} (${d.dayLabel}): ${d.minutes} phút • ${d.sessions} ca học (Nhấp để xem chi tiết)`;
+        col.onclick = () => selectHistoryDate(d.key);
 
         const heightPct = d.minutes > 0 ? Math.max(12, Math.round((d.minutes / maxMin) * 85)) : 6;
 
@@ -8721,7 +8976,7 @@ function copyPuritySummary() {
         if (config.enforcement_mode) {
           setEnforcement(config.enforcement_mode, true);
         }
-        ["friction_barrier_enabled", "eye_care_enabled", "halfway_nudge_enabled", "wrapup_nudge_enabled"].forEach(key => {
+        ["friction_barrier_enabled", "eye_care_enabled", "halfway_nudge_enabled", "wrapup_nudge_enabled", "idle_detection_enabled"].forEach(key => {
           if (config[key] !== undefined) {
             const toggle = document.getElementById(`toggle-${key}`);
             if (toggle) {
@@ -8730,6 +8985,8 @@ function copyPuritySummary() {
             }
           }
         });
+
+        customGoalPresets = Array.isArray(config.custom_goal_presets) ? config.custom_goal_presets : [];
 
         const kwInp = document.getElementById("customStudyKeywordsInput");
         if (kwInp && Array.isArray(config.custom_study_keywords)) {
